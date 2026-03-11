@@ -1,26 +1,190 @@
 @import "tailwindcss";
 
+/* ============================================
+   THE BOOK CLUB - Design System
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colors - Primary */
+  --color-primary: #e85d04;
+  --color-primary-light: #f48c06;
+  --color-primary-dark: #dc2f02;
+
+  /* Colors - Neutral */
+  --color-dark: #1a0303;
+  --color-gray: #a9a9a9;
+  --color-cream: #f8e0b6;
+  --color-white: #ffffff;
+  --color-background: #ffffff;
+
+  /* Colors - Red Gradient (decorative) */
+  --color-red-900: #190101;
+  --color-red-800: #2f0404;
+  --color-red-700: #6a040f;
+  --color-red-600: #9d0208;
+  --color-red-500: #dc2f02;
+
+  /* Typography - Tracking */
+  --tracking-tight: -0.02em;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 28px;
+  --spacing-3xl: 40px;
+  --spacing-4xl: 60px;
+  --spacing-5xl: 80px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  /* Layout */
+  --max-width-desktop: 1500px;
+  --max-width-content: 800px;
+  --sidebar-width: 220px;
 }
 
+/* Tailwind Theme Integration */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colors */
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-dark: var(--color-dark);
+  --color-gray: var(--color-gray);
+  --color-cream: var(--color-cream);
+  --color-background: var(--color-background);
+
+  /* Fonts */
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-display: var(--font-mediamoure), serif;
+
+  /* Custom spacing */
+  --spacing-4xl: 60px;
+  --spacing-5xl: 80px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Base Styles */
+body {
+  background: var(--color-background);
+  color: var(--color-dark);
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Typography Classes */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Desktop Typography */
+.text-t1 {
+  font-size: 48px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-t2 {
+  font-size: 36px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-t3 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-t4 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-body {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.text-small {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* Mobile Typography */
+@media (max-width: 768px) {
+  .text-t1 {
+    font-size: 36px;
+  }
+
+  .text-t2 {
+    font-size: 28px;
+  }
+
+  .text-t3 {
+    font-size: 24px;
+  }
+
+  .text-t4 {
+    font-size: 20px;
+  }
+
+  .text-body {
+    font-size: 16px;
+  }
+
+  .text-small {
+    font-size: 12px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Link Styles */
+.link-discrete {
+  color: var(--color-primary);
+  text-decoration: underline;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.link-discrete:hover {
+  opacity: 0.8;
+}
+
+/* Focus Styles for Accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-dark);
 }
