@@ -19,10 +19,17 @@ const sizeClasses = {
 };
 
 const badgeIcons: Record<MemberBadge, string> = {
-  member: "👤",
-  honorary: "⭐",
-  benefactor: "💎",
-  honor: "👑",
+  member: "/images/badges/member.svg",
+  honorary: "/images/badges/honorary.svg",
+  benefactor: "/images/badges/benefactor.svg",
+  honor: "/images/badges/honor.svg",
+};
+
+const badgeLabels: Record<MemberBadge, string> = {
+  member: "Membre du club",
+  honorary: "Membre honoraire",
+  benefactor: "Membre bienfaiteur",
+  honor: "Membre d'honneur",
 };
 
 export function Avatar({
@@ -37,15 +44,17 @@ export function Avatar({
   return (
     <div className={`relative inline-block ${className}`}>
       <div
-        className={`${sizeClass} rounded-full overflow-hidden bg-cream flex items-center justify-center`}
+        className={`${sizeClass} relative rounded-full overflow-hidden bg-cream flex items-center justify-center`}
       >
         {src ? (
           <Image
             src={src}
             alt={alt}
             fill
-            className="object-cover"
-            sizes={size === "xl" ? "96px" : size === "lg" ? "80px" : "32px"}
+            className="object-cover object-center"
+            sizes={size === "xl" ? "150px" : size === "lg" ? "80px" : "32px"}
+            quality={95}
+            priority={size === "xl" || size === "lg"}
           />
         ) : (
           <span className="text-gray text-sm font-medium">
@@ -54,23 +63,18 @@ export function Avatar({
         )}
       </div>
       {badge && (
-        <span
-          className="absolute -bottom-0.5 -right-0.5 text-xs"
-          title={getBadgeLabel(badge)}
+        <div
+          className="absolute -bottom-0.5 -right-0.5"
+          title={badgeLabels[badge]}
         >
-          {badgeIcons[badge]}
-        </span>
+          <Image
+            src={badgeIcons[badge]}
+            alt={badgeLabels[badge]}
+            width={16}
+            height={16}
+          />
+        </div>
       )}
     </div>
   );
-}
-
-function getBadgeLabel(badge: MemberBadge): string {
-  const labels: Record<MemberBadge, string> = {
-    member: "Membre du club",
-    honorary: "Membre honoraire",
-    benefactor: "Membre bienfaiteur",
-    honor: "Membre d'honneur",
-  };
-  return labels[badge];
 }

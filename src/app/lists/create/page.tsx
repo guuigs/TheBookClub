@@ -114,7 +114,7 @@ export default function CreateListPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 {searchQuery && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 max-h-[300px] overflow-y-auto">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-5 max-h-[300px] overflow-y-auto">
                     {availableBooks.slice(0, 8).map((book) => (
                       <BookCoverSelect
                         key={book.id}
@@ -130,7 +130,7 @@ export default function CreateListPage() {
 
             {/* Selected books grid */}
             {selectedBooks.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-5">
                 {selectedBooks.map((book) => (
                   <div key={book.id} className="relative group">
                     <BookCoverSelect

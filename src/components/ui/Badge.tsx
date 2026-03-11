@@ -1,52 +1,53 @@
 "use client";
 
-import { Award, Heart, Crown, User } from "lucide-react";
+import Image from "next/image";
 import type { MemberBadge } from "@/types";
 
 export interface BadgeProps {
   type: MemberBadge;
   showLabel?: boolean;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   className?: string;
 }
 
 const badgeConfig: Record<
   MemberBadge,
   {
-    icon: React.ElementType;
+    icon: string;
     label: string;
     description: string;
   }
 > = {
   member: {
-    icon: User,
+    icon: "/images/badges/member.svg",
     label: "membre du club",
     description:
       "Adhérent gratuit au Book Club. Ce membre lit, note, consulte les avis du club.",
   },
   honorary: {
-    icon: Award,
+    icon: "/images/badges/honorary.svg",
     label: "membre honoraire",
     description:
       "Membre connu pour sa participation au Book Club, rajout de livres encore inconnus, notation, critique.",
   },
   benefactor: {
-    icon: Heart,
+    icon: "/images/badges/benefactor.svg",
     label: "membre bienfaiteur",
     description:
       "Le bienfaiteur est reconnu pour avoir aidé financièrement le Book Club.",
   },
   honor: {
-    icon: Crown,
+    icon: "/images/badges/honor.svg",
     label: "membre d'honneur",
     description:
       "La direction décide d'honorer particulièrement une personne selon son implication, son aide financière particulièrement élevée, son travail de promotion du club, etc.",
   },
 };
 
-const sizeClasses = {
-  sm: "w-4 h-4",
-  md: "w-5 h-5",
+const sizeConfig = {
+  sm: 16,
+  md: 20,
+  lg: 32,
 };
 
 export function Badge({
@@ -56,14 +57,20 @@ export function Badge({
   className = "",
 }: BadgeProps) {
   const config = badgeConfig[type];
-  const Icon = config.icon;
+  const iconSize = sizeConfig[size];
 
   return (
     <div
-      className={`inline-flex items-center gap-1 ${className}`}
+      className={`inline-flex items-center gap-2 ${className}`}
       title={config.description}
     >
-      <Icon className={`${sizeClasses[size]} text-primary`} />
+      <Image
+        src={config.icon}
+        alt={config.label}
+        width={iconSize}
+        height={iconSize}
+        className="shrink-0"
+      />
       {showLabel && (
         <span className="text-small font-medium text-dark">
           {config.label}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
@@ -31,24 +31,30 @@ export default function Home() {
     }
   };
 
-  // Get popular books
-  const popularBooks = [...books]
-    .sort((a, b) => b.totalVotes - a.totalVotes)
-    .slice(0, 4);
+  // Get popular books (memoized to avoid re-sorting on every render)
+  const popularBooks = useMemo(
+    () => [...books].sort((a, b) => b.totalVotes - a.totalVotes).slice(0, 4),
+    []
+  );
 
-  // Get recent comments with their books
-  const recentComments = comments.slice(0, 6).map((comment) => ({
-    comment,
-    book: getBookById(comment.bookId)!,
-  }));
+  // Get recent comments with their books (memoized)
+  const recentComments = useMemo(
+    () =>
+      comments.slice(0, 6).map((comment) => ({
+        comment,
+        book: getBookById(comment.bookId)!,
+      })),
+    []
+  );
 
-  // Get popular lists
-  const popularLists = [...bookLists]
-    .sort((a, b) => b.likesCount - a.likesCount)
-    .slice(0, 4);
+  // Get popular lists (memoized)
+  const popularLists = useMemo(
+    () => [...bookLists].sort((a, b) => b.likesCount - a.likesCount).slice(0, 4),
+    []
+  );
 
-  // Get featured members
-  const featuredMembers = users.slice(0, 4);
+  // Get featured members (memoized)
+  const featuredMembers = useMemo(() => users.slice(0, 4), []);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -61,7 +67,7 @@ export default function Home() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: "url('/images/hero-bg.jpg')",
+              backgroundImage: "url('/images/homepage-herosection-background.png')",
             }}
           >
             <div className="absolute inset-0 bg-black/30" />

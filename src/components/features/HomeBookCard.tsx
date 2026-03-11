@@ -9,12 +9,16 @@ import type { Book } from "@/types";
 export interface HomeBookCardProps {
   book: Book;
   commentsCount?: number;
+  userRating?: number;
+  isRead?: boolean;
   className?: string;
 }
 
 export function HomeBookCard({
   book,
   commentsCount = 0,
+  userRating,
+  isRead = false,
   className = "",
 }: HomeBookCardProps) {
   return (
@@ -37,6 +41,15 @@ export function HomeBookCard({
             <p className="font-display text-lg text-gray text-center px-4">
               {book.title}
             </p>
+          </div>
+        )}
+
+        {/* Read Badge */}
+        {isRead && userRating && (
+          <div className="absolute top-3 right-3 bg-dark/90 text-white px-3 py-1.5 rounded-full">
+            <span className="text-small font-medium tracking-tight">
+              lu - {userRating}/10
+            </span>
           </div>
         )}
 

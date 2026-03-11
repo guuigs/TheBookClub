@@ -12,7 +12,7 @@
 
   /* Colors - Neutral */
   --color-dark: #1a0303;
-  --color-gray: #a9a9a9;
+  --color-gray: #6B6B6B;
   --color-cream: #f8e0b6;
   --color-white: #ffffff;
   --color-background: #ffffff;
@@ -65,10 +65,6 @@
   --color-cream: var(--color-cream);
   --color-background: var(--color-background);
 
-  /* Fonts */
-  --font-sans: var(--font-manrope), system-ui, sans-serif;
-  --font-display: var(--font-mediamoure), serif;
-
   /* Custom spacing */
   --spacing-4xl: 60px;
   --spacing-5xl: 80px;
@@ -78,13 +74,26 @@
 body {
   background: var(--color-background);
   color: var(--color-dark);
-  font-family: var(--font-sans);
+  font-family: var(--font-manrope), system-ui, sans-serif;
   letter-spacing: var(--tracking-tight);
+  padding-top: 60px; /* Compensation for fixed header */
 }
 
 /* Typography Classes */
 .font-display {
-  font-family: var(--font-display);
+  font-family: var(--font-mediamoure), serif;
+  font-weight: 400 !important; /* Mediamoure only has regular weight */
+  font-style: normal;
+}
+
+.font-display-italic {
+  font-family: var(--font-mediamoure), serif;
+  font-weight: 400 !important;
+  font-style: italic;
+}
+
+.font-sans {
+  font-family: var(--font-manrope), system-ui, sans-serif;
 }
 
 /* Desktop Typography */

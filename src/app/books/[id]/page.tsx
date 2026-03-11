@@ -59,10 +59,10 @@ export default function BookPage({
     <div className="min-h-screen flex flex-col bg-white">
       <Header user={currentUser} />
 
-      <main className="flex-1 w-full max-w-[1500px] mx-auto">
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 px-5 py-10 lg:py-[120px]">
+      <main className="flex-1 w-full px-5 py-10 lg:py-[120px]">
+        <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 max-w-[1100px] mx-auto">
           {/* Left Sidebar - Rating + Cover (sticky on desktop) */}
-          <aside className="lg:sticky lg:top-[120px] lg:self-start flex flex-col gap-10 w-full lg:w-[220px] shrink-0 order-2 lg:order-1">
+          <aside className="lg:sticky lg:top-[80px] lg:self-start flex flex-col gap-10 w-full lg:w-[220px] shrink-0 order-2 lg:order-1">
             {/* Rating Block */}
             <RatingBlock
               averageRating={book.averageRating}
@@ -92,7 +92,7 @@ export default function BookPage({
           </aside>
 
           {/* Main Content */}
-          <div className="flex flex-col gap-[60px] flex-1 max-w-[800px] order-1 lg:order-2 mx-auto lg:mx-0">
+          <div className="flex flex-col gap-[60px] flex-1 order-1 lg:order-2">
             {/* Title & Description */}
             <section className="flex flex-col gap-6">
               <h1 className="font-display text-t2 md:text-t1 text-dark tracking-tight">
@@ -159,7 +159,7 @@ export default function BookPage({
               <div className="flex flex-col gap-7">
                 <div className="flex flex-col gap-3 items-start">
                   <span className="text-body font-medium text-gray tracking-tight">
-                    Lecture en ligne gratuit
+                    Lecture en ligne gratuite
                   </span>
                   <div className="flex flex-col gap-2 items-start">
                     <Button variant="discrete" size="sm">
