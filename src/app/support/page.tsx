@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
-import { currentUser } from "@/lib/data";
 import { Heart, Coffee, CreditCard } from "lucide-react";
 
 export default function SupportPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={currentUser} />
+      <Header />
 
       <main className="flex-1 w-full max-w-[800px] mx-auto px-5 py-10 lg:py-[80px]">
         <h1 className="font-display text-t1 text-dark tracking-tight mb-6">

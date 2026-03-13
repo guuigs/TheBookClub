@@ -49,6 +49,7 @@ export interface User {
   listsCount: number;
   followersCount: number;
   followingCount: number;
+  joinDate?: string;
 }
 
 // Comment/Review

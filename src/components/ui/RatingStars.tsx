@@ -60,8 +60,14 @@ export function RatingStars({
     }
   };
 
+  const ratingLabel = `${rating} sur ${maxRating}`;
+
   return (
-    <div className={`flex gap-1 ${className}`}>
+    <div
+      className={`flex gap-1 ${className}`}
+      role={interactive ? undefined : "img"}
+      aria-label={interactive ? undefined : ratingLabel}
+    >
       {Array.from({ length: starsCount }).map((_, index) => {
         const fillPercentage = Math.min(
           Math.max((filledStars - index) * 100, 0),
@@ -76,11 +82,14 @@ export function RatingStars({
             onClick={() => handleClick(index)}
             onMouseEnter={() => handleMouseEnter(index)}
             onMouseLeave={handleMouseLeave}
-            className={`relative ${interactive ? "cursor-pointer" : "cursor-default"} disabled:cursor-default`}
+            aria-hidden={!interactive}
+            aria-label={interactive ? `Noter ${(index + 1) * starValue} sur ${maxRating}` : undefined}
+            className={`relative ${interactive ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-sm" : "cursor-default"} disabled:cursor-default`}
           >
             {/* Background star (empty) */}
             <Star
               className={`${sizeClasses[size]} ${emptyColor} fill-transparent`}
+              aria-hidden="true"
             />
             {/* Foreground star (filled) - clipped based on percentage */}
             <div
@@ -89,6 +98,7 @@ export function RatingStars({
             >
               <Star
                 className={`${sizeClasses[size]} ${filledColor}`}
+                aria-hidden="true"
               />
             </div>
           </button>

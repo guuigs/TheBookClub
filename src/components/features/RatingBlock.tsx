@@ -45,7 +45,11 @@ export function RatingBlock({
         </p>
 
         {/* Histogram Bars */}
-        <div className="flex items-end justify-between w-full h-[44px]">
+        <div
+          className="flex items-end justify-between w-full h-[44px]"
+          role="img"
+          aria-label={`Répartition des votes : ${ratingDistribution.map((v, i) => `note ${i + 1} : ${v} vote${v > 1 ? "s" : ""}`).join(", ")}`}
+        >
           {ratingDistribution.map((votes, index) => {
             const height = (votes / maxVotes) * 44;
             return (
@@ -53,7 +57,7 @@ export function RatingBlock({
                 key={index}
                 className="w-[20px] bg-primary rounded-t-sm transition-all hover:opacity-80"
                 style={{ height: `${Math.max(height, 2)}px` }}
-                title={`Note ${index + 1}: ${votes} vote${votes > 1 ? "s" : ""}`}
+                aria-hidden="true"
               />
             );
           })}

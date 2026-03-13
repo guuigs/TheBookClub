@@ -24,7 +24,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="relative">
         {variant === "search" && (
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray" aria-hidden="true" />
         )}
         <input
           ref={ref}

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, useEffect, use } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
-import { CommentCard, SectionHeader } from "@/components/features";
-import { getBookById, getCommentsByBookId, currentUser } from "@/lib/data";
+import { CommentCard } from "@/components/features";
+import { createClient } from "@/lib/supabase/browser";
+import type { Book, Comment, MemberBadge } from "@/types";
 
-type SortOption = "recent" | "rating";
+type SortOption = "recent" | "likes";
 type SortDirection = "asc" | "desc";
 
 export default function BookCommentsPage({
@@ -17,26 +18,86 @@ export default function BookCommentsPage({
 }) {
   const { id } = use(params);
 
+  const [book, setBook] = useState<Book | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  const book = getBookById(id);
-  const comments = getCommentsByBookId(id);
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase
+      .from("books_with_stats")
+      .select("id, title")
+      .eq("id", id)
+      .single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then(({ data }) => {
+        if (data) {
+          setBook({
+            id: data.id,
+            title: data.title,
+            author: { id: "", name: "", booksCount: 0 },
+            coverUrl: "",
+            description: "",
+            publishedYear: 0,
+            genre: "",
+            averageRating: 0,
+            totalVotes: 0,
+            ratingDistribution: [],
+          });
+        }
+      });
+
+    supabase
+      .from("comments")
+      .select(
+        `*, user:profiles(id, username, display_name, avatar_url, badge),
+         likes_count:comment_likes(count)`
+      )
+      .eq("book_id", id)
+      .order("created_at", { ascending: false })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then(({ data }) => {
+        if (data) {
+          setComments(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data.map((row: any) => ({
+              id: row.id,
+              user: {
+                id: row.user?.id ?? "",
+                username: row.user?.username ?? "",
+                displayName: row.user?.display_name ?? "",
+                avatarUrl: row.user?.avatar_url ?? undefined,
+                badge: (row.user?.badge as MemberBadge) ?? "member",
+                booksRead: 0,
+                listsCount: 0,
+                followersCount: 0,
+                followingCount: 0,
+              },
+              bookId: row.book_id,
+              content: row.content,
+              createdAt: new Date(row.created_at),
+              likesCount: Number(row.likes_count?.[0]?.count ?? 0),
+            }))
+          );
+        }
+      });
+  }, [id]);
 
   const sortedComments = useMemo(() => {
-    const sorted = [...comments].sort((a, b) => {
+    return [...comments].sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
         case "recent":
           comparison = b.createdAt.getTime() - a.createdAt.getTime();
           break;
-        case "rating":
-          comparison = (b.rating || 0) - (a.rating || 0);
+        case "likes":
+          comparison = b.likesCount - a.likesCount;
           break;
       }
       return sortDirection === "desc" ? comparison : -comparison;
     });
-    return sorted;
   }, [comments, sortBy, sortDirection]);
 
   const handleSortChange = (newSort: SortOption) => {
@@ -48,29 +109,16 @@ export default function BookCommentsPage({
     }
   };
 
-  if (!book) {
-    return (
-      <div className="min-h-screen flex flex-col bg-white">
-        <Header user={currentUser} />
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-t3 text-dark">Livre non trouvé</p>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: "recent", label: "Récent" },
-    { value: "rating", label: "Note" },
+    { value: "likes", label: "Likes" },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={currentUser} />
+      <Header />
 
       <main className="flex-1 w-full max-w-[800px] mx-auto px-5 py-10 lg:py-[80px]">
-        {/* Back link */}
         <Link
           href={`/books/${id}`}
           className="inline-flex items-center gap-2 text-body font-medium text-gray hover:text-primary transition-colors mb-8"
@@ -79,18 +127,14 @@ export default function BookCommentsPage({
           Retour au livre
         </Link>
 
-        {/* Header */}
         <div className="flex flex-col gap-6 mb-10">
           <div className="flex flex-col gap-2">
-            <h1 className="text-t2 font-semibold text-dark">
-              Commentaires
-            </h1>
-            <p className="text-body text-gray font-display">
-              {book.title}
-            </p>
+            <h1 className="text-t2 font-semibold text-dark">Commentaires</h1>
+            {book && (
+              <p className="text-body text-gray font-display">{book.title}</p>
+            )}
           </div>
 
-          {/* Sort Options */}
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-body font-medium text-gray">Trier par :</span>
             {sortOptions.map((option) => (
@@ -104,19 +148,17 @@ export default function BookCommentsPage({
                 }`}
               >
                 {option.label}
-                {sortBy === option.value && (
-                  sortDirection === "desc" ? (
+                {sortBy === option.value &&
+                  (sortDirection === "desc" ? (
                     <ChevronDown className="w-4 h-4" />
                   ) : (
                     <ChevronUp className="w-4 h-4" />
-                  )
-                )}
+                  ))}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Comments List */}
         {sortedComments.length > 0 ? (
           <div className="flex flex-col gap-6">
             {sortedComments.map((comment) => (
@@ -125,12 +167,8 @@ export default function BookCommentsPage({
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <p className="text-t3 font-semibold text-dark">
-              Aucun commentaire
-            </p>
-            <p className="text-body text-gray">
-              Soyez le premier à donner votre avis !
-            </p>
+            <p className="text-t3 font-semibold text-dark">Aucun commentaire</p>
+            <p className="text-body text-gray">Soyez le premier à donner votre avis !</p>
           </div>
         )}
       </main>

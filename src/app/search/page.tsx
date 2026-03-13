@@ -6,16 +6,74 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Input } from "@/components/ui";
 import { BookCard, ListCard } from "@/components/features";
-import { books, bookLists, currentUser } from "@/lib/data";
+import { createClient } from "@/lib/supabase/browser";
+import type { Book, BookList, MemberBadge } from "@/types";
 
 type SearchTab = "books" | "lists" | "users";
 type SortOption = "popular" | "rating" | "recent";
 type SortDirection = "asc" | "desc";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapBook(row: any): Book {
+  return {
+    id: row.id,
+    title: row.title,
+    author: { id: row.author_id ?? "", name: row.author_name ?? "", booksCount: 0 },
+    coverUrl: row.cover_url ?? "",
+    description: row.description ?? "",
+    publishedYear: row.published_year ?? 0,
+    genre: row.genre ?? "",
+    averageRating: Number(row.average_rating ?? 0),
+    totalVotes: Number(row.total_votes ?? 0),
+    ratingDistribution: [],
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapList(row: any): BookList {
+  const author = row.author ?? {};
+  const items = row.items ?? [];
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    author: {
+      id: author.id ?? "",
+      username: author.username ?? "",
+      displayName: author.display_name ?? "Inconnu",
+      avatarUrl: author.avatar_url ?? undefined,
+      badge: (author.badge as MemberBadge) ?? "member",
+      booksRead: 0,
+      listsCount: 0,
+      followersCount: 0,
+      followingCount: 0,
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    books: items.map((item: any) => ({
+      id: item.book?.id ?? "",
+      title: item.book?.title ?? "",
+      author: { id: "", name: "", booksCount: 0 },
+      coverUrl: item.book?.cover_url ?? "",
+      description: "",
+      publishedYear: 0,
+      genre: "",
+      averageRating: 0,
+      totalVotes: 0,
+      ratingDistribution: [],
+    })),
+    booksCount: Number(row.books_count?.[0]?.count ?? 0),
+    likesCount: Number(row.likes_count?.[0]?.count ?? 0),
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at ?? row.created_at),
+  };
+}
+
 function SearchContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const [query, setQuery] = useState(initialQuery);
+  const [allBooks, setAllBooks] = useState<Book[]>([]);
+  const [allLists, setAllLists] = useState<BookList[]>([]);
   const [activeTab, setActiveTab] = useState<SearchTab>("books");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -24,43 +82,58 @@ function SearchContent() {
     setQuery(searchParams.get("q") || "");
   }, [searchParams]);
 
-  // Search filter including synopsis
-  const filteredBooks = useMemo(() => {
-    const lowerQuery = query.toLowerCase();
-    return books.filter(
-      (book) =>
-        book.title.toLowerCase().includes(lowerQuery) ||
-        book.author.name.toLowerCase().includes(lowerQuery) ||
-        book.genre.toLowerCase().includes(lowerQuery) ||
-        book.description.toLowerCase().includes(lowerQuery)
-    );
-  }, [query]);
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from("books_with_stats").select("*").then(({ data }) => {
+      if (data) setAllBooks(data.map(mapBook));
+    });
+    supabase
+      .from("book_lists")
+      .select(
+        `id, title, description, author_id, created_at, updated_at,
+         author:profiles(id, username, display_name, avatar_url, badge),
+         items:book_list_items(book:books(id, title, cover_url, author_id)),
+         likes_count:list_likes(count),
+         books_count:book_list_items(count)`
+      )
+      .then(({ data }) => {
+        if (data) setAllLists(data.map(mapList));
+      });
+  }, []);
 
-  // Sort filtered books
+  const filteredBooks = useMemo(() => {
+    if (!query.trim()) return allBooks;
+    const q = query.toLowerCase();
+    return allBooks.filter(
+      (b) =>
+        b.title.toLowerCase().includes(q) ||
+        b.author.name.toLowerCase().includes(q) ||
+        b.genre.toLowerCase().includes(q) ||
+        b.description.toLowerCase().includes(q)
+    );
+  }, [allBooks, query]);
+
   const sortedBooks = useMemo(() => {
-    const sorted = [...filteredBooks].sort((a, b) => {
+    return [...filteredBooks].sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
-        case "popular":
-          comparison = b.totalVotes - a.totalVotes;
-          break;
-        case "rating":
-          comparison = b.averageRating - a.averageRating;
-          break;
-        case "recent":
-          comparison = b.publishedYear - a.publishedYear;
-          break;
+        case "popular": comparison = b.totalVotes - a.totalVotes; break;
+        case "rating":  comparison = b.averageRating - a.averageRating; break;
+        case "recent":  comparison = b.publishedYear - a.publishedYear; break;
       }
       return sortDirection === "desc" ? comparison : -comparison;
     });
-    return sorted;
   }, [filteredBooks, sortBy, sortDirection]);
 
-  const filteredLists = bookLists.filter(
-    (list) =>
-      list.title.toLowerCase().includes(query.toLowerCase()) ||
-      list.description?.toLowerCase().includes(query.toLowerCase())
-  );
+  const filteredLists = useMemo(() => {
+    if (!query.trim()) return allLists;
+    const q = query.toLowerCase();
+    return allLists.filter(
+      (l) =>
+        l.title.toLowerCase().includes(q) ||
+        l.description?.toLowerCase().includes(q)
+    );
+  }, [allLists, query]);
 
   const handleSortChange = (newSort: SortOption) => {
     if (newSort === sortBy) {
@@ -72,147 +145,110 @@ function SearchContent() {
   };
 
   const sortOptions: { value: SortOption; label: string }[] = [
-    { value: "popular", label: "Popularit&eacute;" },
+    { value: "popular", label: "Popularité" },
     { value: "rating", label: "Note" },
-    { value: "recent", label: "R&eacute;cent" },
+    { value: "recent", label: "Récent" },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={currentUser} />
+      <Header />
 
-      <main className="flex-1 w-full max-w-[1500px] mx-auto px-5 py-10 lg:py-[80px]">
-        {/* Search Header */}
+      <main id="main-content" className="flex-1 w-full max-w-[1500px] mx-auto px-5 py-10 lg:py-[80px]">
+        <h1 className="sr-only">Recherche</h1>
+
         <div className="flex flex-col gap-8 mb-10">
-          {/* Search Input */}
           <div className="max-w-[600px] mx-auto w-full">
             <Input
               variant="search"
               placeholder="Rechercher un livre, une liste, un auteur..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              aria-label="Rechercher un livre, une liste ou un auteur"
             />
           </div>
 
-          {/* Tabs */}
-          <div className="flex justify-center gap-5 border-b border-gray/20">
-            <button
-              onClick={() => setActiveTab("books")}
-              className={`pb-3 text-body font-medium tracking-tight transition-colors ${
-                activeTab === "books"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray hover:text-dark"
-              }`}
-            >
-              Livres ({filteredBooks.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("lists")}
-              className={`pb-3 text-body font-medium tracking-tight transition-colors ${
-                activeTab === "lists"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray hover:text-dark"
-              }`}
-            >
-              Listes ({filteredLists.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("users")}
-              className={`pb-3 text-body font-medium tracking-tight transition-colors ${
-                activeTab === "users"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray hover:text-dark"
-              }`}
-            >
-              Utilisateurs
-            </button>
+          <div role="tablist" className="flex justify-center gap-5 border-b border-gray/20">
+            {(["books", "lists", "users"] as SearchTab[]).map((tab) => (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={activeTab === tab}
+                onClick={() => setActiveTab(tab)}
+                className={`pb-3 text-body font-medium tracking-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm ${
+                  activeTab === tab
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-gray hover:text-dark"
+                }`}
+              >
+                {tab === "books" && `Livres (${filteredBooks.length})`}
+                {tab === "lists" && `Listes (${filteredLists.length})`}
+                {tab === "users" && "Utilisateurs"}
+              </button>
+            ))}
           </div>
 
-          {/* Sort Options (only for books) */}
           {activeTab === "books" && (
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <span className="text-body font-medium text-gray">Trier par :</span>
+            <div className="flex flex-wrap items-center justify-center gap-3" role="toolbar">
+              <span className="text-body font-medium text-gray" aria-hidden="true">Trier par :</span>
               {sortOptions.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => handleSortChange(option.value)}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-body font-medium tracking-tight transition-colors ${
+                  aria-pressed={sortBy === option.value}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium tracking-tight transition-colors ${
                     sortBy === option.value
                       ? "bg-dark text-white"
                       : "bg-gray/10 text-dark hover:bg-gray/20"
                   }`}
                 >
-                  <span dangerouslySetInnerHTML={{ __html: option.label }} />
-                  {sortBy === option.value && (
-                    sortDirection === "desc" ? (
-                      <ChevronDown className="w-4 h-4" />
+                  {option.label}
+                  {sortBy === option.value &&
+                    (sortDirection === "desc" ? (
+                      <ChevronDown className="w-4 h-4" aria-hidden="true" />
                     ) : (
-                      <ChevronUp className="w-4 h-4" />
-                    )
-                  )}
+                      <ChevronUp className="w-4 h-4" aria-hidden="true" />
+                    ))}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Results */}
         {activeTab === "books" && (
-          <div className="flex flex-col gap-8">
-            {sortedBooks.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-                {sortedBooks.map((book) => (
-                  <BookCard
-                    key={book.id}
-                    book={book}
-                    size="md"
-                    showTitle
-                    showAuthor
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <p className="text-t3 font-semibold text-dark">
-                  Aucun livre trouv&eacute;
-                </p>
-                <p className="text-body text-gray">
-                  Essayez avec d&apos;autres mots-cl&eacute;s
-                </p>
-              </div>
-            )}
-          </div>
+          sortedBooks.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+              {sortedBooks.map((book) => (
+                <BookCard key={book.id} book={book} size="md" showTitle showAuthor />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <p className="text-t3 font-semibold text-dark">Aucun livre trouvé</p>
+              <p className="text-body text-gray">Essayez avec d&apos;autres mots-clés</p>
+            </div>
+          )
         )}
 
         {activeTab === "lists" && (
-          <div className="flex flex-col gap-8">
-            {filteredLists.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredLists.map((list) => (
-                  <ListCard key={list.id} list={list} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <p className="text-t3 font-semibold text-dark">
-                  Aucune liste trouv&eacute;e
-                </p>
-                <p className="text-body text-gray">
-                  Essayez avec d&apos;autres mots-cl&eacute;s
-                </p>
-              </div>
-            )}
-          </div>
+          filteredLists.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredLists.map((list) => (
+                <ListCard key={list.id} list={list} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <p className="text-t3 font-semibold text-dark">Aucune liste trouvée</p>
+              <p className="text-body text-gray">Essayez avec d&apos;autres mots-clés</p>
+            </div>
+          )
         )}
 
         {activeTab === "users" && (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <p className="text-t3 font-semibold text-dark">
-              Recherche d&apos;utilisateurs
-            </p>
-            <p className="text-body text-gray">
-              Cette fonctionnalit&eacute; arrive bient&ocirc;t
-            </p>
+            <p className="text-t3 font-semibold text-dark">Recherche d&apos;utilisateurs</p>
+            <p className="text-body text-gray">Cette fonctionnalité arrive bientôt</p>
           </div>
         )}
       </main>

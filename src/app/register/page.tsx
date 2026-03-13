@@ -5,33 +5,53 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { signUp } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (password !== confirmPassword) {
-      alert("Les mots de passe ne correspondent pas");
+      setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
       return;
     }
     if (!acceptTerms) {
-      alert("Veuillez accepter les conditions d'utilisation");
+      setError("Veuillez accepter les conditions d'utilisation.");
       return;
     }
-    // Mock registration
-    router.push("/login");
+
+    setIsLoading(true);
+    const { error } = await signUp(email, password, username.trim(), displayName.trim());
+    if (error) {
+      setError(error);
+      setIsLoading(false);
+    } else {
+      router.push("/login?registered=1");
+    }
   };
+
+  const inputCls =
+    "px-4 py-3 border border-gray/30 rounded-lg text-body focus:outline-none focus:ring-2 focus:ring-primary";
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={null} />
+      <Header />
 
       <main className="flex-1 flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-[400px]">
@@ -43,6 +63,12 @@ export default function RegisterPage() {
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {error && (
+              <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm font-medium text-red-700">{error}</p>
+              </div>
+            )}
+
             <div className="flex flex-col gap-2">
               <label htmlFor="displayName" className="text-body font-medium text-dark">
                 Nom d&apos;affichage
@@ -53,8 +79,10 @@ export default function RegisterPage() {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
+                maxLength={50}
                 placeholder="Votre nom"
-                className="px-4 py-3 border border-gray/30 rounded-lg text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                className={inputCls}
+                autoComplete="name"
               />
             </div>
 
@@ -66,10 +94,14 @@ export default function RegisterPage() {
                 id="username"
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, '_'))}
                 required
+                maxLength={30}
                 placeholder="votre_pseudo"
-                className="px-4 py-3 border border-gray/30 rounded-lg text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                pattern="^[a-z0-9_]+$"
+                title="Lettres minuscules, chiffres et underscores uniquement"
+                className={inputCls}
+                autoComplete="username"
               />
             </div>
 
@@ -83,8 +115,10 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                maxLength={255}
                 placeholder="votre@email.com"
-                className="px-4 py-3 border border-gray/30 rounded-lg text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                className={inputCls}
+                autoComplete="email"
               />
             </div>
 
@@ -98,8 +132,11 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={8}
+                maxLength={128}
                 placeholder="••••••••"
-                className="px-4 py-3 border border-gray/30 rounded-lg text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                className={inputCls}
+                autoComplete="new-password"
               />
             </div>
 
@@ -113,8 +150,10 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                maxLength={128}
                 placeholder="••••••••"
-                className="px-4 py-3 border border-gray/30 rounded-lg text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                className={inputCls}
+                autoComplete="new-password"
               />
             </div>
 
@@ -137,8 +176,8 @@ export default function RegisterPage() {
               </span>
             </label>
 
-            <Button type="submit" variant="primary" className="w-full mt-2">
-              Créer mon compte
+            <Button type="submit" variant="primary" className="w-full mt-2" disabled={isLoading}>
+              {isLoading ? "Création..." : "Créer mon compte"}
             </Button>
           </form>
 

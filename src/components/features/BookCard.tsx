@@ -12,6 +12,7 @@ export interface BookCardProps {
   showTitle?: boolean;
   showAuthor?: boolean;
   commentsCount?: number;
+  myRating?: number | null;
   className?: string;
 }
 
@@ -39,6 +40,7 @@ export function BookCard({
   showTitle = false,
   showAuthor = false,
   commentsCount = 0,
+  myRating = null,
   className = "",
 }: BookCardProps) {
   const config = sizeConfig[size];
@@ -75,13 +77,35 @@ export function BookCard({
           </div>
         )}
 
-        {/* Hover overlay with rating */}
-        <div className="absolute inset-0 bg-gradient-to-t from-dark/80 via-dark/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Hover overlay — Option C */}
+        <div className="absolute inset-0 bg-gradient-to-t from-dark/90 via-dark/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-2">
-            <RatingStars rating={book.averageRating} size="sm" variant="light" />
-            <div className="flex items-center gap-2 text-white text-small">
-              <MessageCircle className="w-4 h-4" />
-              <span>{commentsCount || book.totalVotes} avis</span>
+            {/* Ma note — top block */}
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-semibold tracking-widest uppercase text-white/50">Ma note</span>
+              {myRating ? (
+                <div className="flex items-center gap-2">
+                  <RatingStars rating={myRating} size="sm" variant="light" className="[&_svg]:text-primary [&_svg]:fill-primary [&_svg]:stroke-primary" />
+                  <span className="text-primary font-semibold text-[14px] leading-none">{myRating}/10</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {[1,2,3,4,5].map((i) => (
+                    <svg key={i} className="w-4 h-4 text-white/25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  ))}
+                  <span className="text-white/40 text-[11px] font-medium">—</span>
+                </div>
+              )}
+            </div>
+            {/* Separator */}
+            <div className="w-full h-px bg-white/20" />
+            {/* Moyenne — bottom block */}
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-semibold tracking-widest uppercase text-white/50">Moyenne</span>
+              <div className="flex items-center gap-2">
+                <RatingStars rating={book.averageRating} size="sm" variant="light" />
+                <span className="text-white font-semibold text-[13px] leading-none">{book.averageRating}/10</span>
+              </div>
             </div>
           </div>
         </div>

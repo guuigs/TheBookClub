@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { Header, Footer } from "@/components/layout";
 import { Button, Avatar } from "@/components/ui";
-import { currentUser } from "@/lib/data";
+import { useAuth } from "@/context/AuthContext";
 import { Camera } from "lucide-react";
 
 export default function SettingsPage() {
-  const [displayName, setDisplayName] = useState(currentUser.displayName);
-  const [username, setUsername] = useState(currentUser.username);
-  const [email, setEmail] = useState("ekko@bookclub.fr");
-  const [bio, setBio] = useState("");
+  const { profile } = useAuth();
+  const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
+  const [username, setUsername] = useState(profile?.username ?? "");
+  const [email, setEmail] = useState("");
+  const [bio, setBio] = useState(profile?.bio ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +21,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={currentUser} />
+      <Header />
 
       <main className="flex-1 w-full max-w-[800px] mx-auto px-5 py-10 lg:py-[80px]">
         <h1 className="font-display text-t1 text-dark tracking-tight mb-[60px]">
@@ -34,8 +35,8 @@ export default function SettingsPage() {
             <div className="flex items-center gap-6">
               <div className="relative">
                 <Avatar
-                  src={currentUser.avatarUrl}
-                  alt={currentUser.displayName}
+                  src={profile?.avatar_url ?? undefined}
+                  alt={profile?.display_name ?? "Profil"}
                   size="xl"
                   className="w-[120px] h-[120px]"
                 />

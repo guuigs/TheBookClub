@@ -75,7 +75,7 @@ export function ListCard({ list, className = "" }: ListCardProps) {
           {list.books.length} livre{list.books.length > 1 ? "s" : ""}
         </span>
         <div className="flex items-center gap-1">
-          <Heart className="w-4 h-4 text-dark" />
+          <Heart className="w-4 h-4 text-dark" aria-hidden="true" />
           <span className="text-body font-medium text-dark tracking-tight">
             {list.likesCount} like{list.likesCount > 1 ? "s" : ""}
           </span>

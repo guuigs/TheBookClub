@@ -61,6 +61,7 @@ export const users: User[] = [
     listsCount: 12,
     followersCount: 1249,
     followingCount: 89,
+    joinDate: "16 janvier 2026",
   },
   {
     id: "2",
@@ -72,6 +73,7 @@ export const users: User[] = [
     listsCount: 3,
     followersCount: 234,
     followingCount: 120,
+    joinDate: "23 février 2026",
   },
   {
     id: "3",
@@ -83,6 +85,7 @@ export const users: User[] = [
     listsCount: 25,
     followersCount: 2567,
     followingCount: 45,
+    joinDate: "5 décembre 2025",
   },
   {
     id: "4",
@@ -94,6 +97,7 @@ export const users: User[] = [
     listsCount: 8,
     followersCount: 567,
     followingCount: 156,
+    joinDate: "10 janvier 2026",
   },
   {
     id: "5",
@@ -105,6 +109,7 @@ export const users: User[] = [
     listsCount: 2,
     followersCount: 45,
     followingCount: 78,
+    joinDate: "1 mars 2026",
   },
 ];
 
@@ -407,4 +412,40 @@ export function getTopRatedBooks(limit: number = 8): Book[] {
   return [...books]
     .sort((a, b) => b.averageRating - a.averageRating)
     .slice(0, limit);
+}
+
+// ============================================
+// BADGE LABELS (single source of truth)
+// ============================================
+
+export const badgeLabels: Record<string, string> = {
+  member: "membre du club",
+  honorary: "membre honoraire",
+  benefactor: "membre bienfaiteur",
+  honor: "membre d'honneur",
+};
+
+// ============================================
+// USER RATINGS (per-user personal ratings)
+// ============================================
+
+// userId → { bookId: rating }
+export const allUserRatings: Record<string, Record<string, number>> = {
+  "1": { "1": 7, "2": 9, "3": 10, "4": 8 },           // Ekko : 4 livres notés
+  "2": { "5": 7, "6": 8 },                              // Marie : 2 livres notés
+  "3": { "1": 9, "3": 10, "5": 8, "7": 9 },            // Jean-Pierre : 4 livres notés
+  "4": { "2": 8, "4": 9, "6": 7 },                     // Sophie : 3 livres notés
+  "5": { "7": 6, "8": 7 },                              // Lucas : 2 livres notés
+};
+
+// Shortcut for current user (backwards compat)
+export const userRatings = allUserRatings[currentUser.id] ?? {};
+
+export function getUserRatingForBook(bookId: string, userId: string = currentUser.id): number | null {
+  return allUserRatings[userId]?.[bookId] ?? null;
+}
+
+export function getRatedBooksByUserId(userId: string): Book[] {
+  const ratedIds = Object.keys(allUserRatings[userId] ?? {});
+  return books.filter((b) => ratedIds.includes(b.id));
 }

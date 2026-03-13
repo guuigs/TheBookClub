@@ -1,14 +1,20 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, use, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { CommentCard } from "@/components/features";
-import { getBookById, getCommentsByBookId, currentUser } from "@/lib/data";
+import { createClient } from "@/lib/supabase/browser";
+import type { Comment } from "@/types";
 
 type SortOption = "recent" | "rating";
 type SortDirection = "asc" | "desc";
+
+interface BookData {
+  id: string;
+  title: string;
+}
 
 export default function BookFriendsCommentsPage({
   params,
@@ -19,15 +25,34 @@ export default function BookFriendsCommentsPage({
 
   const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [book, setBook] = useState<BookData | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const book = getBookById(id);
-  const comments = getCommentsByBookId(id);
+  useEffect(() => {
+    const supabase = createClient();
 
-  // Filter to only show friends' comments (mock: just show all for now)
-  const friendsComments = comments;
+    async function fetchData() {
+      setLoading(true);
+
+      // Fetch book info
+      const { data: bookData } = await supabase
+        .from("books")
+        .select("id, title")
+        .eq("id", id)
+        .single();
+      setBook(bookData ?? null);
+
+      // Friends comments - secondary page, return empty for now
+      setComments([]);
+      setLoading(false);
+    }
+
+    fetchData();
+  }, [id]);
 
   const sortedComments = useMemo(() => {
-    const sorted = [...friendsComments].sort((a, b) => {
+    const sorted = [...comments].sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
         case "recent":
@@ -40,7 +65,7 @@ export default function BookFriendsCommentsPage({
       return sortDirection === "desc" ? comparison : -comparison;
     });
     return sorted;
-  }, [friendsComments, sortBy, sortDirection]);
+  }, [comments, sortBy, sortDirection]);
 
   const handleSortChange = (newSort: SortOption) => {
     if (newSort === sortBy) {
@@ -51,12 +76,24 @@ export default function BookFriendsCommentsPage({
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-body text-gray">Chargement...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!book) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
-        <Header user={currentUser} />
+        <Header />
         <main className="flex-1 flex items-center justify-center">
-          <p className="text-t3 text-dark">Livre non trouv&eacute;</p>
+          <p className="text-t3 text-dark">Livre non trouvé</p>
         </main>
         <Footer />
       </div>
@@ -64,13 +101,13 @@ export default function BookFriendsCommentsPage({
   }
 
   const sortOptions: { value: SortOption; label: string }[] = [
-    { value: "recent", label: "R&eacute;cent" },
+    { value: "recent", label: "Récent" },
     { value: "rating", label: "Note" },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={currentUser} />
+      <Header />
 
       <main className="flex-1 w-full max-w-[800px] mx-auto px-5 py-10 lg:py-[80px]">
         {/* Back link */}
@@ -106,7 +143,7 @@ export default function BookFriendsCommentsPage({
                     : "bg-gray/10 text-dark hover:bg-gray/20"
                 }`}
               >
-                <span dangerouslySetInnerHTML={{ __html: option.label }} />
+                {option.label}
                 {sortBy === option.value && (
                   sortDirection === "desc" ? (
                     <ChevronDown className="w-4 h-4" />
@@ -132,7 +169,7 @@ export default function BookFriendsCommentsPage({
               Aucun commentaire
             </p>
             <p className="text-body text-gray">
-              Vos amis n&apos;ont pas encore comment&eacute; ce livre
+              Vos amis n&apos;ont pas encore commenté ce livre
             </p>
           </div>
         )}

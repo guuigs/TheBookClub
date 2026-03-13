@@ -4,19 +4,28 @@ import { useState } from "react";
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
+import { createClient } from "@/lib/supabase/browser";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    const supabase = createClient();
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    // Always show success to avoid user enumeration
     setSubmitted(true);
+    setIsLoading(false);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={null} />
+      <Header />
 
       <main className="flex-1 flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-[400px]">
@@ -42,13 +51,15 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    maxLength={255}
                     placeholder="votre@email.com"
                     className="px-4 py-3 border border-gray/30 rounded-lg text-body focus:outline-none focus:ring-2 focus:ring-primary"
+                    autoComplete="email"
                   />
                 </div>
 
-                <Button type="submit" variant="primary" className="w-full">
-                  Envoyer le lien
+                <Button type="submit" variant="primary" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Envoi..." : "Envoyer le lien"}
                 </Button>
               </form>
             </>

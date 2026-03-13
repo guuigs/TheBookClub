@@ -3,14 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { BookCard, SectionHeader } from "@/components/features";
-import { authors, getBooksByAuthorId, currentUser } from "@/lib/data";
-
-// Generate static params for all authors
-export async function generateStaticParams() {
-  return authors.map((author) => ({
-    id: author.id,
-  }));
-}
+import { createClient } from "@/lib/supabase/server";
+import type { Book, Author } from "@/types";
 
 export default async function AuthorBooksPage({
   params,
@@ -18,17 +12,60 @@ export default async function AuthorBooksPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const author = authors.find((a) => a.id === id);
+  const supabase = await createClient();
 
-  if (!author) {
+  const { data: authorData } = await supabase
+    .from("authors")
+    .select("id, name, bio, photo_url, books_count")
+    .eq("id", id)
+    .single();
+
+  if (!authorData) {
     notFound();
   }
 
-  const authorBooks = getBooksByAuthorId(id);
+  const author: Author = {
+    id: authorData.id,
+    name: authorData.name,
+    bio: authorData.bio ?? undefined,
+    photoUrl: authorData.photo_url ?? undefined,
+    booksCount: authorData.books_count ?? 0,
+  };
+
+  const { data: booksData } = await supabase
+    .from("books")
+    .select("id, title, cover_url, description, published_year, genre, average_rating, total_votes, rating_distribution, author:authors(id, name, bio, photo_url, books_count)")
+    .eq("author_id", id);
+
+  const authorBooks: Book[] = (booksData ?? []).map((b) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawAuthor = b.author as any;
+    const a: Record<string, unknown> | null = Array.isArray(rawAuthor) ? (rawAuthor[0] ?? null) : (rawAuthor ?? null);
+    return {
+      id: b.id,
+      title: b.title,
+      coverUrl: b.cover_url ?? "",
+      description: b.description ?? "",
+      publishedYear: b.published_year ?? 0,
+      genre: b.genre ?? "",
+      averageRating: b.average_rating ?? 0,
+      totalVotes: b.total_votes ?? 0,
+      ratingDistribution: (b.rating_distribution as number[]) ?? [],
+      author: a
+        ? {
+            id: a.id as string,
+            name: a.name as string,
+            bio: (a.bio as string) ?? undefined,
+            photoUrl: (a.photo_url as string) ?? undefined,
+            booksCount: (a.books_count as number) ?? 0,
+          }
+        : author,
+    };
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={currentUser} />
+      <Header />
 
       <main className="flex-1 w-full max-w-[900px] mx-auto px-5 py-[120px]">
         {/* Author Header (simplified) */}

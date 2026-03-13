@@ -1,51 +1,84 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { Avatar, Badge } from "@/components/ui";
 import type { User } from "@/types";
 
 export interface MemberCardProps {
   user: User;
+  onFollow?: () => void;
+  showFollowButton?: boolean;
   className?: string;
 }
 
-export function MemberCard({ user, className = "" }: MemberCardProps) {
-  const badgeLabels = {
-    member: "membre du club",
-    honorary: "membre honoraire",
-    benefactor: "membre bienfaiteur",
-    honor: "membre d'honneur",
-  };
+const badgeLabels = {
+  member: "membre du club",
+  honorary: "membre honoraire",
+  benefactor: "membre bienfaiteur",
+  honor: "membre d'honneur",
+};
 
+const badgeIcons: Record<string, string> = {
+  member: "/images/badges/member.svg",
+  honorary: "/images/badges/honorary.svg",
+  benefactor: "/images/badges/benefactor.svg",
+  honor: "/images/badges/honor.svg",
+};
+
+export function MemberCard({ user, onFollow, showFollowButton = false, className = "" }: MemberCardProps) {
   return (
-    <Link
-      href={`/profile/${user.id}`}
-      className={`group flex flex-col items-center gap-5 w-[260px] ${className}`}
-    >
-      {/* Avatar */}
-      <div className="relative w-[180px] h-[180px]">
-        <Avatar
-          src={user.avatarUrl}
-          alt={user.displayName}
-          size="xl"
-          className="w-full h-full"
-        />
-      </div>
+    <div className={`group flex flex-col items-center gap-3 w-[160px] ${className}`}>
+      <Link href={`/profile/${user.id}`} className="flex flex-col items-center gap-3 w-full">
+        {/* Avatar with badge top-right */}
+        <div className="relative w-[110px] h-[110px]">
+          <div className="relative w-full h-full rounded-full overflow-hidden bg-cream">
+            {user.avatarUrl ? (
+              <Image
+                src={user.avatarUrl}
+                alt={user.displayName}
+                fill
+                className="object-cover object-center"
+                sizes="110px"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-gray text-xl font-medium">
+                  {user.displayName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+          </div>
+          {/* Badge: top-right, slightly offset, z-10 */}
+          <div className="absolute -top-1 -right-1 z-10">
+            <Image
+              src={badgeIcons[user.badge]}
+              alt={badgeLabels[user.badge]}
+              width={24}
+              height={24}
+            />
+          </div>
+        </div>
 
-      {/* Info */}
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div className="flex flex-col items-center gap-2">
-          <h3 className="font-display text-t2 text-dark tracking-tight group-hover:text-primary transition-colors">
+        {/* Info */}
+        <div className="flex flex-col items-center gap-1 text-center">
+          <h3 className="font-display text-[16px] text-dark tracking-tight group-hover:text-primary transition-colors line-clamp-1">
             {user.displayName}
           </h3>
-          <p className="text-t4 font-medium text-dark tracking-tight">
-            {badgeLabels[user.badge]}
+          <p className="text-[11px] font-medium text-gray tracking-tight">
+            {user.followersCount} abonnés
           </p>
         </div>
-        <p className="text-body font-medium text-gray tracking-tight">
-          Suivi par {user.followersCount} membres du Club
-        </p>
-      </div>
-    </Link>
+      </Link>
+
+      {showFollowButton && (
+        <button
+          onClick={onFollow}
+          aria-label={`Suivre ${user.displayName}`}
+          className="px-3 py-1 rounded-lg text-xs font-medium bg-dark text-white hover:opacity-90 transition-opacity tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          Suivre
+        </button>
+      )}
+    </div>
   );
 }

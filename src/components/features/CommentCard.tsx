@@ -41,7 +41,7 @@ export function CommentCard({
   const shouldTruncate = truncate && comment.content.length > 300;
 
   return (
-    <div className={`flex gap-4 w-full ${className}`}>
+    <article className={`flex gap-4 w-full ${className}`}>
       {/* Avatar */}
       <Link href={`/members/${comment.user.id}`} className="shrink-0">
         <Avatar
@@ -110,7 +110,9 @@ export function CommentCard({
         <button
           type="button"
           onClick={handleLike}
-          className="flex items-center gap-1 group w-fit"
+          aria-label={isLiked ? "Ne plus aimer ce commentaire" : "Aimer ce commentaire"}
+          aria-pressed={isLiked}
+          className="flex items-center gap-1 group w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
         >
           <Heart
             className={`w-5 h-5 transition-colors ${
@@ -118,12 +120,13 @@ export function CommentCard({
                 ? "fill-primary text-primary"
                 : "text-dark group-hover:text-primary"
             }`}
+            aria-hidden="true"
           />
-          <span className="text-body font-medium text-dark tracking-tight group-hover:text-primary transition-colors">
+          <span className="text-body font-medium text-dark tracking-tight group-hover:text-primary transition-colors" aria-live="polite" aria-atomic="true">
             {likesCount} like{likesCount > 1 ? "s" : ""}
           </span>
         </button>
       </div>
-    </div>
+    </article>
   );
 }

@@ -13,3 +13,6 @@ export type { RatingStarsProps } from "./RatingStars";
 
 export { Badge } from "./Badge";
 export type { BadgeProps } from "./Badge";
+
+export { InteractiveStarRating } from "./InteractiveStarRating";
+export type { InteractiveStarRatingProps } from "./InteractiveStarRating";

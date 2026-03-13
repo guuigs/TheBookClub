@@ -94,7 +94,7 @@ export function HomeCommentCard({
         </Link>
 
         {/* Comment Text */}
-        <p className="text-[12px] font-medium text-dark tracking-tight leading-relaxed line-clamp-3">
+        <p className="text-[15px] font-medium text-dark tracking-tight leading-relaxed line-clamp-3">
           {truncatedContent}
         </p>
 
@@ -110,7 +110,7 @@ export function HomeCommentCard({
         {/* Likes */}
         <div className="flex items-center gap-1">
           <Heart className="w-3 h-3 text-dark" />
-          <span className="text-[12px] font-normal text-dark">
+          <span className="text-[13px] font-normal text-dark">
             {comment.likesCount} like{comment.likesCount !== 1 ? "s" : ""}
           </span>
         </div>

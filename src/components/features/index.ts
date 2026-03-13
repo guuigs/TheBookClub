@@ -17,9 +17,6 @@ export type { FriendActivityCardProps } from "./FriendActivityCard";
 export { SectionHeader } from "./SectionHeader";
 export type { SectionHeaderProps } from "./SectionHeader";
 
-export { HomeBookCard } from "./HomeBookCard";
-export type { HomeBookCardProps } from "./HomeBookCard";
-
 export { HomeCommentCard } from "./HomeCommentCard";
 export type { HomeCommentCardProps } from "./HomeCommentCard";
 

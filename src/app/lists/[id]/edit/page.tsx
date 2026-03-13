@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Input, Button } from "@/components/ui";
 import { BookCoverSelect } from "@/components/features";
-import { books, bookLists, currentUser } from "@/lib/data";
+import { createClient } from "@/lib/supabase/browser";
 import type { Book } from "@/types";
 
 export default function EditListPage({
@@ -18,19 +18,106 @@ export default function EditListPage({
   const { id } = use(params);
   const router = useRouter();
 
-  // Get existing list
-  const existingList = bookLists.find((l) => l.id === id);
-
-  const [title, setTitle] = useState(existingList?.title || "");
-  const [description, setDescription] = useState(existingList?.description || "");
-  const [selectedBooks, setSelectedBooks] = useState<Book[]>(
-    existingList?.books || []
-  );
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedBooks, setSelectedBooks] = useState<Book[]>([]);
+  const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function fetchData() {
+      setLoading(true);
+
+      // Fetch existing list
+      const { data: listData } = await supabase
+        .from("lists")
+        .select("id, title, description, list_books(book:books(id, title, cover_url, description, published_year, genre, average_rating, total_votes, rating_distribution, author:authors(id, name, bio, photo_url, books_count)))")
+        .eq("id", id)
+        .single();
+
+      if (!listData) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      setTitle(listData.title ?? "");
+      setDescription(listData.description ?? "");
+
+      const listBooks: Book[] = ((listData.list_books as Array<{ book: unknown }>) ?? [])
+        .map((lb) => {
+          const b = lb.book as Record<string, unknown> | null;
+          if (!b) return null;
+          const a = b.author as Record<string, unknown> | null;
+          return {
+            id: b.id as string,
+            title: b.title as string,
+            coverUrl: (b.cover_url as string) ?? "",
+            description: (b.description as string) ?? "",
+            publishedYear: (b.published_year as number) ?? 0,
+            genre: (b.genre as string) ?? "",
+            averageRating: (b.average_rating as number) ?? 0,
+            totalVotes: (b.total_votes as number) ?? 0,
+            ratingDistribution: (b.rating_distribution as number[]) ?? [],
+            author: a
+              ? {
+                  id: a.id as string,
+                  name: a.name as string,
+                  bio: (a.bio as string) ?? undefined,
+                  photoUrl: (a.photo_url as string) ?? undefined,
+                  booksCount: (a.books_count as number) ?? 0,
+                }
+              : { id: "", name: "Auteur inconnu", booksCount: 0 },
+          } as Book;
+        })
+        .filter((b): b is Book => b !== null);
+
+      setSelectedBooks(listBooks);
+
+      // Fetch all books for search
+      const { data: booksData } = await supabase
+        .from("books")
+        .select("id, title, cover_url, description, published_year, genre, average_rating, total_votes, rating_distribution, author:authors(id, name, bio, photo_url, books_count)");
+
+      const books: Book[] = (booksData ?? []).map((b) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawAuthor = b.author as any;
+        const a: Record<string, unknown> | null = Array.isArray(rawAuthor) ? (rawAuthor[0] ?? null) : (rawAuthor ?? null);
+        return {
+          id: b.id,
+          title: b.title,
+          coverUrl: b.cover_url ?? "",
+          description: b.description ?? "",
+          publishedYear: b.published_year ?? 0,
+          genre: b.genre ?? "",
+          averageRating: b.average_rating ?? 0,
+          totalVotes: b.total_votes ?? 0,
+          ratingDistribution: (b.rating_distribution as number[]) ?? [],
+          author: a
+            ? {
+                id: a.id as string,
+                name: a.name as string,
+                bio: (a.bio as string) ?? undefined,
+                photoUrl: (a.photo_url as string) ?? undefined,
+                booksCount: (a.books_count as number) ?? 0,
+              }
+            : { id: "", name: "Auteur inconnu", booksCount: 0 },
+        } as Book;
+      });
+      setAllBooks(books);
+      setLoading(false);
+    }
+
+    fetchData();
+  }, [id]);
 
   // Filter available books based on search
-  const availableBooks = books.filter(
+  const availableBooks = allBooks.filter(
     (book) =>
       !selectedBooks.some((selected) => selected.id === book.id) &&
       (book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -53,10 +140,22 @@ export default function EditListPage({
     router.push(`/lists/${id}`);
   };
 
-  if (!existingList) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
-        <Header user={currentUser} />
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-body text-gray">Chargement...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <Header />
         <main className="flex-1 flex items-center justify-center">
           <p className="text-t3 text-dark">Liste non trouvée</p>
         </main>
@@ -67,7 +166,7 @@ export default function EditListPage({
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header user={currentUser} />
+      <Header />
 
       <main className="flex-1 w-full max-w-[800px] mx-auto px-5 py-10 lg:py-[80px]">
         <h1 className="font-display text-t1 text-dark tracking-tight mb-10 text-center md:text-left">

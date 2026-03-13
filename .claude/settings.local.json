@@ -7,7 +7,32 @@
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "mcp__figma__get_screenshot",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(grep -A 10 \"badgeLabels\" /Users/guilhemterrier/Downloads/TheBookClub/src/app/profile/[id]/page.tsx)",
+      "Bash(grep -A 10 \"badgeLabels\" /Users/guilhemterrier/Downloads/TheBookClub/src/app/profile/[id]/books/page.tsx)",
+      "Bash(grep -A 10 \"badgeLabels\" /Users/guilhemterrier/Downloads/TheBookClub/src/app/profile/[id]/comments/page.tsx)",
+      "Bash(node -e \"\nconst data = require\\('./src/lib/data.ts'\\);\n// Check comments\nconsole.log\\('=== CHECKING COMMENTS ==='\\);\nconst commentsData = [\n  {id: '1', user: 'users[0]', bookId: '1'},\n  {id: '2', user: 'users[1]', bookId: '1'},\n  {id: '3', user: 'users[2]', bookId: '1'},\n  {id: '4', user: 'users[3]', bookId: '1'},\n  {id: '5', user: 'users[4]', bookId: '2'},\n  {id: '6', user: 'users[0]', bookId: '3'},\n];\nconsole.log\\('Comments: 6 total'\\);\nconsole.log\\('Book IDs referenced:', commentsData.map\\(c => c.bookId\\)\\);\nconsole.log\\(''\\);\nconsole.log\\('=== BOOKS AVAILABLE ==='\\);\nconsole.log\\('Book IDs in data:', ['1', '2', '3', '4', '5', '6', '7', '8']\\);\n\")",
+      "Bash(grep -n \"eacute\\\\|nbsp\\\\|#\" /Users/guilhemterrier/Downloads/TheBookClub/src/app/books/[id]/lists/page.tsx)",
+      "Bash(cat /Users/guilhemterrier/Downloads/TheBookClub/src/app/books/[id]/lists/page.tsx | grep -n \"eacute\")",
+      "Bash(cat /Users/guilhemterrier/Downloads/TheBookClub/src/app/books/[id]/friends/page.tsx | grep -n \"eacute\")",
+      "Bash(grep -n \"books.*filter\\\\|ratedBooks\" /Users/guilhemterrier/Downloads/TheBookClub/src/app/profile/[id]/books/page.tsx)",
+      "Bash(cat /Users/guilhemterrier/Downloads/TheBookClub/src/app/profile/[id]/books/page.tsx | head -40 | tail -8)",
+      "Bash(/tmp/rating_math.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(grep -n \"dangerouslySetInnerHTML\" /Users/guilhemterrier/Downloads/TheBookClub/src/app/books/[id]/lists/page.tsx)",
+      "Bash(cat > /tmp/profile_issues.txt << 'EOF'\nPROFILE PAGE [id] ISSUES:\n\nLine 49: const favoriteBooks = books.slice\\(0, 4\\);\n- Shows books 1, 2, 3, 4 for ANY profile \\(hardcoded\\)\n- Should be based on what books the user has actually rated\n- Currently shows same books for every profile regardless of user ID\n\nLine 50: const recentRatedBooks = books.slice\\(2, 6\\);\n- Shows books 3, 4, 5, 6 for ANY profile \\(hardcoded\\)\n- Should be sorted by date for that specific user\n- Currently shows same books for every profile regardless of user ID\n\nPROFILE BOOKS PAGE [id]/books/page.tsx ISSUES:\n\nLine 37: const ratedBooks = books;\n- Comment says \"Mock: All books rated by user\"\n- But shows ALL BOOKS \\(1-8\\) regardless of which user's profile it is\n- Should only show books that user has actually rated\n- Each user should have different rated books, but currently ALL users see ALL books\nEOF\ncat /tmp/profile_issues.txt)",
+      "Bash(find /Users/guilhemterrier/Downloads/TheBookClub -type f -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.json\" | grep -E \"\\\\.\\(tsx?|json\\)$\" | head -50)",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__get_publishable_keys",
+      "Bash(ls -la /Users/guilhemterrier/Downloads/TheBookClub/.env* 2>&1 || echo \"No .env files found\")",
+      "mcp__supabase__apply_migration",
+      "Bash(find src:*)",
+      "Bash(grep -l \"@/lib/data\" \\\\\n  /Users/guilhemterrier/Downloads/TheBookClub/src/app/contact/page.tsx \\\\\n  /Users/guilhemterrier/Downloads/TheBookClub/src/app/support/page.tsx \\\\\n  /Users/guilhemterrier/Downloads/TheBookClub/src/app/design-review/page.tsx \\\\\n  /Users/guilhemterrier/Downloads/TheBookClub/src/app/settings/page.tsx \\\\\n  /Users/guilhemterrier/Downloads/TheBookClub/src/app/books/[id]/lists/page.tsx \\\\\n  /Users/guilhemterrier/Downloads/TheBookClub/src/app/books/[id]/friends/page.tsx \\\\\n  /Users/guilhemterrier/Downloads/TheBookClub/src/app/books/[id]/friends/comments/page.tsx \\\\\n  /Users/guilhemterrier/Downloads/TheBookClub/src/app/members/[id]/page.tsx \\\\\n  2>/dev/null && echo \"FOUND - fix needed\" || echo \"All clean\")"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }
