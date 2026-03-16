@@ -77,3 +77,61 @@ export async function getListsContainingBook(bookId: string) {
     .limit(5)
   return data ?? []
 }
+
+// Book status management (to_read / read)
+export type BookStatus = 'to_read' | 'read' | null
+
+export async function getBookStatus(bookId: string): Promise<BookStatus> {
+  const supabase = createBrowserClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data } = await supabase
+    .from('user_books')
+    .select('status')
+    .eq('user_id', user.id)
+    .eq('book_id', bookId)
+    .single()
+
+  return (data?.status as BookStatus) ?? null
+}
+
+export async function setBookStatus(
+  bookId: string,
+  status: 'to_read' | 'read'
+): Promise<{ error: string | null }> {
+  const supabase = createBrowserClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Vous devez être connecté.' }
+
+  const { error } = await supabase
+    .from('user_books')
+    .upsert(
+      {
+        user_id: user.id,
+        book_id: bookId,
+        status,
+        read_date: status === 'read' ? new Date().toISOString().split('T')[0] : null,
+        added_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,book_id' }
+    )
+
+  return { error: error?.message ?? null }
+}
+
+export async function removeBookStatus(
+  bookId: string
+): Promise<{ error: string | null }> {
+  const supabase = createBrowserClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Vous devez être connecté.' }
+
+  const { error } = await supabase
+    .from('user_books')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('book_id', bookId)
+
+  return { error: error?.message ?? null }
+}

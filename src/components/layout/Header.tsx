@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Menu, X, LogOut } from "lucide-react";
-import { useState } from "react";
+import { Search, Menu, X, LogOut, User, BookOpen, List, Settings, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { Avatar } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 
@@ -14,6 +14,19 @@ export function Header() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const navLinks = [
     { href: "/books", label: "livres" },
@@ -77,21 +90,76 @@ export function Header() {
 
             {/* User Avatar / Login */}
             {user && profile ? (
-              <div className="flex items-center gap-3">
-                <Link href={`/profile/${user.id}`} aria-label={`Profil de ${profile.username}`}>
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="true"
+                >
                   <Avatar
                     src={profile.avatar_url ?? undefined}
                     alt={profile.username}
                     size="md"
                   />
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  aria-label="Se déconnecter"
-                  className="text-gray hover:text-dark transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
+                  <ChevronDown className={`w-4 h-4 text-gray transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
                 </button>
+
+                {/* Dropdown Menu */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray/10 py-2 z-50">
+                    <div className="px-4 py-3 border-b border-gray/10">
+                      <p className="text-sm font-semibold text-dark truncate">{profile.display_name || profile.username}</p>
+                      <p className="text-xs text-gray truncate">@{profile.username}</p>
+                    </div>
+                    <nav className="py-1">
+                      <Link
+                        href={`/profile/${user.id}`}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
+                      >
+                        <User className="w-4 h-4 text-gray" />
+                        Mon profil
+                      </Link>
+                      <Link
+                        href={`/profile/${user.id}/books`}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
+                      >
+                        <BookOpen className="w-4 h-4 text-gray" />
+                        Mes livres
+                      </Link>
+                      <Link
+                        href={`/profile/${user.id}/lists`}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
+                      >
+                        <List className="w-4 h-4 text-gray" />
+                        Mes listes
+                      </Link>
+                      <Link
+                        href="/settings"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-gray" />
+                        Parametres
+                      </Link>
+                    </nav>
+                    <div className="border-t border-gray/10 pt-1">
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          handleSignOut();
+                        }}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Deconnexion
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <Link

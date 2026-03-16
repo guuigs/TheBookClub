@@ -8,6 +8,7 @@ import { Header, Footer } from "@/components/layout";
 import { Input, Button } from "@/components/ui";
 import { BookCoverSelect } from "@/components/features";
 import { createClient } from "@/lib/supabase/browser";
+import { updateList, updateListBooks } from "@/lib/db/lists";
 import type { Book } from "@/types";
 
 export default function EditListPage({
@@ -25,7 +26,9 @@ export default function EditListPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -35,8 +38,8 @@ export default function EditListPage({
 
       // Fetch existing list
       const { data: listData } = await supabase
-        .from("lists")
-        .select("id, title, description, list_books(book:books(id, title, cover_url, description, published_year, genre, average_rating, total_votes, rating_distribution, author:authors(id, name, bio, photo_url, books_count)))")
+        .from("book_lists")
+        .select("id, title, description, author_id, book_list_items(book:books(id, title, cover_url, description, published_year, genre, author:authors(id, name, bio, photo_url)))")
         .eq("id", id)
         .single();
 
@@ -49,7 +52,7 @@ export default function EditListPage({
       setTitle(listData.title ?? "");
       setDescription(listData.description ?? "");
 
-      const listBooks: Book[] = ((listData.list_books as Array<{ book: unknown }>) ?? [])
+      const listBooks: Book[] = ((listData.book_list_items as Array<{ book: unknown }>) ?? [])
         .map((lb) => {
           const b = lb.book as Record<string, unknown> | null;
           if (!b) return null;
@@ -133,10 +136,27 @@ export default function EditListPage({
     setSelectedBooks(selectedBooks.filter((book) => book.id !== bookId));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Save list to backend
-    alert("Liste mise à jour avec succès !");
+    setError(null);
+    setSaving(true);
+
+    // Update list metadata
+    const { error: listError } = await updateList(id, title.trim(), description.trim() || undefined);
+    if (listError) {
+      setError(listError);
+      setSaving(false);
+      return;
+    }
+
+    // Update list books
+    const { error: booksError } = await updateListBooks(id, selectedBooks.map((b) => b.id));
+    if (booksError) {
+      setError(booksError);
+      setSaving(false);
+      return;
+    }
+
     router.push(`/lists/${id}`);
   };
 
@@ -174,6 +194,12 @@ export default function EditListPage({
         </h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+          {error && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm font-medium text-red-700">{error}</p>
+            </div>
+          )}
+
           {/* Title */}
           <div className="flex flex-col gap-2">
             <label
@@ -277,8 +303,8 @@ export default function EditListPage({
                 Annuler
               </Button>
             </Link>
-            <Button type="submit" variant="primary" disabled={!title}>
-              Enregistrer
+            <Button type="submit" variant="primary" disabled={!title.trim() || saving}>
+              {saving ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </div>
         </form>

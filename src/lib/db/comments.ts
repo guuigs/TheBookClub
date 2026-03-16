@@ -112,3 +112,67 @@ export async function toggleCommentLike(
     return { liked: true, error: error?.message ?? null }
   }
 }
+
+export async function updateComment(
+  commentId: string,
+  content: string
+): Promise<{ error: string | null }> {
+  const supabase = createBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Vous devez être connecté.' }
+
+  // Verify ownership
+  const { data: comment } = await supabase
+    .from('comments')
+    .select('user_id')
+    .eq('id', commentId)
+    .single()
+
+  if (!comment || comment.user_id !== user.id) {
+    return { error: 'Vous ne pouvez modifier que vos propres commentaires.' }
+  }
+
+  const { error } = await supabase
+    .from('comments')
+    .update({ content: content.slice(0, 2000) })
+    .eq('id', commentId)
+
+  return { error: error?.message ?? null }
+}
+
+export async function deleteComment(
+  commentId: string
+): Promise<{ error: string | null }> {
+  const supabase = createBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Vous devez être connecté.' }
+
+  // Verify ownership
+  const { data: comment } = await supabase
+    .from('comments')
+    .select('user_id')
+    .eq('id', commentId)
+    .single()
+
+  if (!comment || comment.user_id !== user.id) {
+    return { error: 'Vous ne pouvez supprimer que vos propres commentaires.' }
+  }
+
+  // Delete likes first
+  await supabase
+    .from('comment_likes')
+    .delete()
+    .eq('comment_id', commentId)
+
+  // Delete comment
+  const { error } = await supabase
+    .from('comments')
+    .delete()
+    .eq('id', commentId)
+
+  return { error: error?.message ?? null }
+}

@@ -5,16 +5,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
-import { Button, InteractiveStarRating } from "@/components/ui";
+import { Button, InteractiveStarRating, useToast } from "@/components/ui";
 import {
   RatingBlock,
   CommentCard,
   BookCard,
   SectionHeader,
+  BookStatusButton,
+  FavoriteButton,
 } from "@/components/features";
 import { createClient } from "@/lib/supabase/browser";
 import { upsertRating, getUserRating } from "@/lib/db/ratings";
 import { createComment } from "@/lib/db/comments";
+import { getBookStatus, type BookStatus } from "@/lib/db/books";
+import { isBookFavorite } from "@/lib/db/favorites";
 import type { Book, Comment, MemberBadge } from "@/types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,6 +73,7 @@ export default function BookPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const toast = useToast();
 
   const [book, setBook] = useState<Book | null>(null);
   const [bookNotFound, setBookNotFound] = useState(false);
@@ -80,6 +85,8 @@ export default function BookPage({
   const [myRating, setMyRating] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [bookStatus, setBookStatus] = useState<BookStatus>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -122,11 +129,14 @@ export default function BookPage({
       });
 
     getUserRating(id).then(setMyRating);
+    getBookStatus(id).then(setBookStatus);
+    isBookFavorite(id).then(setIsFavorite);
   }, [id]);
 
   const handleRatingChange = async (rating: number) => {
     setMyRating(rating);
     await upsertRating(id, rating);
+    toast.success(`Note de ${rating}/10 enregistree`);
     const supabase = createClient();
     const { data } = await supabase
       .from("books_with_stats")
@@ -149,6 +159,7 @@ export default function BookPage({
     if (!error) {
       setCommentText("");
       setShowCommentModal(false);
+      toast.success("Commentaire publie !");
       const supabase = createClient();
       const { data } = await supabase
         .from("comments")
@@ -160,6 +171,8 @@ export default function BookPage({
         .order("created_at", { ascending: false })
         .limit(10);
       if (data) setComments(data.map(mapComment));
+    } else {
+      toast.error("Erreur lors de la publication");
     }
     setIsSubmittingComment(false);
   };
@@ -256,18 +269,18 @@ export default function BookPage({
             </section>
 
             <section className="flex flex-wrap items-center gap-3 md:gap-4">
-              <button
-                onClick={() => setShowCommentModal(true)}
-                className="px-5 py-2.5 bg-dark text-white rounded-lg text-body font-medium tracking-tight hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark focus-visible:ring-offset-2"
-              >
+              <BookStatusButton bookId={id} initialStatus={bookStatus} />
+              <FavoriteButton
+                bookId={id}
+                initialIsFavorite={isFavorite}
+                onToggle={setIsFavorite}
+              />
+              <Button variant="primary" size="md" onClick={() => setShowCommentModal(true)}>
                 Commenter
-              </button>
-              <button
-                onClick={() => setShowShareModal(true)}
-                className="px-5 py-2.5 bg-white text-dark border border-dark rounded-lg text-body font-medium tracking-tight hover:bg-cream transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark focus-visible:ring-offset-2"
-              >
+              </Button>
+              <Button variant="secondary" size="md" onClick={() => setShowShareModal(true)}>
                 Partager
-              </button>
+              </Button>
               <Link
                 href="/contact?subject=modification"
                 className="text-body font-medium text-gray underline underline-offset-2 hover:text-dark transition-colors"
@@ -276,7 +289,7 @@ export default function BookPage({
               </Link>
             </section>
 
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-[70px]">
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-[70px]">
               <div className="flex flex-col gap-7">
                 <div className="flex flex-col gap-3 items-start">
                   <span className="text-body font-medium text-gray tracking-tight">Auteur</span>
@@ -294,12 +307,12 @@ export default function BookPage({
                 </div>
               </div>
 
+              {/* External links section - hidden until real data is available
               <div className="flex flex-col gap-7">
                 <div className="flex flex-col gap-3 items-start">
                   <span className="text-body font-medium text-gray tracking-tight">Lecture en ligne gratuite</span>
                   <div className="flex flex-col gap-2 items-start">
                     <Button variant="discrete" size="sm">pdf 1</Button>
-                    <Button variant="discrete" size="sm">pdf 2</Button>
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 items-start">
@@ -307,6 +320,7 @@ export default function BookPage({
                   <Button variant="discrete" size="sm">lien 1</Button>
                 </div>
               </div>
+              */}
 
               <div className="flex flex-col gap-3 items-start">
                 <span className="text-body font-medium text-gray tracking-tight">Les librairies du club</span>
@@ -369,16 +383,18 @@ export default function BookPage({
               className="w-full px-4 py-3 bg-gray/10 border border-gray/20 rounded-lg text-body text-dark placeholder:text-gray focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             />
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowCommentModal(false)} className="px-4 py-2 text-sm font-medium text-gray hover:text-dark transition-colors">
+              <Button variant="discrete" size="sm" onClick={() => setShowCommentModal(false)}>
                 Annuler
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleSubmitComment}
-                disabled={!commentText.trim() || isSubmittingComment}
-                className="px-5 py-2.5 bg-dark text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                disabled={!commentText.trim()}
+                isLoading={isSubmittingComment}
               >
-                {isSubmittingComment ? "Publication..." : "Publier"}
-              </button>
+                Publier
+              </Button>
             </div>
           </div>
         </div>
@@ -403,17 +419,18 @@ export default function BookPage({
               <span className="text-sm font-medium text-dark flex-1 truncate">
                 thebookclub.fr/books/{book.id}
               </span>
-              <button
+              <Button
+                variant="primary"
+                size="xs"
                 onClick={() => navigator.clipboard.writeText(`thebookclub.fr/books/${book.id}`)}
-                className="px-3 py-1.5 bg-dark text-white rounded-lg text-xs font-medium hover:opacity-90 transition-opacity shrink-0"
               >
                 Copier
-              </button>
+              </Button>
             </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowShareModal(false)} className="px-4 py-2 text-sm font-medium text-gray hover:text-dark transition-colors">
+              <Button variant="discrete" size="sm" onClick={() => setShowShareModal(false)}>
                 Fermer
-              </button>
+              </Button>
             </div>
           </div>
         </div>

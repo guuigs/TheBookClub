@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/components/ui";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -54,7 +55,9 @@ export default async function RootLayout({
           Aller au contenu principal
         </a>
         <AuthProvider initialSession={session}>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronUp, Plus, Heart } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { ListCard } from "@/components/features";
+import { Button } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/browser";
 import type { BookList } from "@/types";
@@ -175,10 +176,10 @@ function ListsContent() {
           <div className="w-px h-5 bg-gray/30 mx-1" aria-hidden="true" />
 
           <Link href="/lists/create">
-            <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-dark text-white hover:opacity-90 transition-opacity tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-              <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+            <Button variant="primary" size="sm">
+              <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
               Créer une liste
-            </button>
+            </Button>
           </Link>
         </div>
 
@@ -193,10 +194,10 @@ function ListsContent() {
             <p className="text-t3 font-semibold text-dark">Aucune liste trouvée</p>
             {activeFilter === "mine" && (
               <Link href="/lists/create">
-                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-dark text-white hover:opacity-90 transition-opacity tracking-tight">
-                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                <Button variant="primary" size="sm">
+                  <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
                   Créer ma première liste
-                </button>
+                </Button>
               </Link>
             )}
           </div>

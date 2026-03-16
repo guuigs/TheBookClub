@@ -4,8 +4,8 @@
 Application web type Letterboxd pour les livres.
 
 ## Stack Technique
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
+- **Framework**: Next.js 16.1.6 (App Router + Turbopack)
+- **Language**: TypeScript 5
 - **Styling**: Tailwind CSS v4
 - **Fonts**: Manrope (Google Fonts) + Mediamoure (local)
 - **Icons**: Lucide React
@@ -40,100 +40,157 @@ Application web type Letterboxd pour les livres.
 - **Sans (body)**: Manrope (Medium 500, SemiBold 600)
 - **Display (titres déco)**: Mediamoure
 
-## Structure des Dossiers
+## Structure des Dossiers (Mise à jour)
 ```
 src/
-├── app/                    # Pages Next.js (App Router)
-│   ├── authors/[id]/       # Page auteur
-│   ├── books/[id]/         # Page détail livre
-│   ├── lists/              # Page liste des listes
-│   │   ├── [id]/           # Page détail liste
-│   │   └── create/         # Page création liste
-│   ├── profile/[id]/       # Page profil utilisateur
-│   ├── search/             # Page recherche
-│   ├── globals.css         # Design system tokens
-│   ├── layout.tsx          # Root layout avec fonts
-│   └── page.tsx            # Homepage
+├── app/                         # Pages Next.js (App Router)
+│   ├── authors/[id]/            # Page auteur
+│   ├── books/                   # Liste des livres
+│   │   └── [id]/                # Page détail livre
+│   │       ├── comments/        # Tous les commentaires
+│   │       ├── friends/         # Activité amis
+│   │       │   └── comments/    # Commentaires amis
+│   │       └── lists/           # Listes contenant ce livre
+│   ├── lists/                   # Page liste des listes
+│   │   ├── [id]/                # Page détail liste
+│   │   │   └── edit/            # Edition liste
+│   │   └── create/              # Page création liste
+│   ├── login/                   # Page connexion
+│   ├── profile/[id]/            # Page profil utilisateur
+│   ├── search/                  # Page recherche
+│   ├── globals.css              # Design system tokens
+│   ├── layout.tsx               # Root layout avec fonts
+│   └── page.tsx                 # Homepage
 ├── components/
-│   ├── ui/                 # Composants atomiques
+│   ├── ui/                      # Composants atomiques (5)
 │   │   ├── Avatar.tsx
 │   │   ├── Badge.tsx
 │   │   ├── Button.tsx
 │   │   ├── Input.tsx
 │   │   ├── RatingStars.tsx
 │   │   └── index.ts
-│   ├── layout/             # Header, Footer
+│   ├── layout/                  # Header, Footer (2)
 │   │   ├── Header.tsx
 │   │   ├── Footer.tsx
 │   │   └── index.ts
-│   └── features/           # Composants métier
-│       ├── BookCard.tsx
+│   └── features/                # Composants métier (13)
+│       ├── BookCard.tsx         # + variant BookCardOverlay
+│       ├── BookCoverSelect.tsx
 │       ├── CommentCard.tsx
+│       ├── CommentModal.tsx
 │       ├── FriendActivityCard.tsx
+│       ├── HomeBookCard.tsx
+│       ├── HomeCommentCard.tsx
 │       ├── ListCard.tsx
+│       ├── MemberCard.tsx
 │       ├── RatingBlock.tsx
+│       ├── RatingModal.tsx
 │       ├── SectionHeader.tsx
 │       └── index.ts
-├── fonts/                  # Mediamoure font files
-│   ├── mediamoure-regular.ttf
-│   └── mediamoure-regularitalic.ttf
-├── lib/                    # Utilitaires, helpers
+├── fonts/                       # Mediamoure font files
+├── lib/
+│   └── data.ts                  # Mock data (13KB)
+├── media/                       # Images locales
+│   ├── book-cover-*.jpg
+│   ├── homepage-herosection-background.png
+│   └── profil-picture.jpg
+├── tasks/                       # Gestion de projet
+│   ├── todo.md                  # Plan d'action
+│   └── lessons.md               # Leçons apprises
 └── types/
-    └── index.ts            # TypeScript types
+    └── index.ts                 # TypeScript types complets
 ```
+
+## Audit Qualité (16 mars 2026)
+
+### Scores par Catégorie
+| Catégorie | Score | Détails |
+|-----------|-------|---------|
+| Pages | 7.3/10 | 15 pages, toutes fonctionnelles avec mock data |
+| Composants UI | 10/10 | 5 composants production-ready |
+| Composants Features | 9.6/10 | 13 composants, 1 bug mineur |
+| Design System | 10/10 | Complet et responsive |
+| Types | 10/10 | Couverture complète |
+
+### Pages Détaillées
+| Page | Score | Statut |
+|------|-------|--------|
+| Home | 8/10 | Fonctionnel, responsive |
+| Book Detail | 9/10 | Excellent, layout complexe |
+| Books Browse | 7.5/10 | Manque pagination |
+| Author | 9/10 | Excellent avec SSG |
+| Lists | 7.5/10 | Manque pagination |
+| List Detail | 9/10 | Complet avec actions |
+| List Create/Edit | 6.5/10 | Pas de persistence |
+| Profile | 8.5/10 | Complet |
+| Search | 8/10 | Manque onglet Users |
+| Login | 4/10 | Placeholder uniquement |
+
+### Bugs Identifiés
+1. `CommentCard.tsx:81` - Dynamic Tailwind class ne fonctionne pas
+2. `MemberCard.tsx` - Labels de badge dupliqués
+3. `Header.tsx` - SearchInput dupliqué (desktop/mobile)
 
 ## Progression
 
-### ✅ Complété
-- [x] Initialisation Next.js 16 + TypeScript + Tailwind
+### ✅ Complété (Session 1-2)
+- [x] Initialisation Next.js 16 + TypeScript + Tailwind v4
 - [x] Configuration fonts (Manrope + Mediamoure)
-- [x] Design system (couleurs, typographie, tokens CSS)
+- [x] Design system complet (couleurs, typographie, tokens CSS)
 - [x] Structure des dossiers
 - [x] Composants UI: Button, Input, Avatar, RatingStars, Badge
-- [x] Composant Header (responsive avec menu mobile)
-- [x] Composant Footer
-- [x] Composant BookCard (+ variant overlay)
-- [x] Composant RatingBlock (histogramme des votes)
-- [x] Composant CommentCard
-- [x] Composant ListCard
-- [x] Composant FriendActivityCard
-- [x] Composant SectionHeader
-- [x] Page Book (détail d'un livre) - avec generateStaticParams
-- [x] Page Home (placeholder)
-- [x] Page Search (recherche livres/listes avec tabs)
-- [x] Page Lists (liste des listes + navigation)
-- [x] Page List Detail (/lists/[id])
-- [x] Page Create List (/lists/create)
-- [x] Page Profile (/profile/[id]) - profil utilisateur
-- [x] Page Author (/authors/[id]) - page auteur
-- [x] Types TypeScript (Book, Author, User, Comment, BookList, etc.)
+- [x] Composants Layout: Header (responsive), Footer
+- [x] Composants Features: 13 composants métier complets
+- [x] Page Home (fonctionnelle avec sections)
+- [x] Page Book Detail + sous-pages (comments, friends, lists)
+- [x] Page Books Browse (avec tri)
+- [x] Page Author
+- [x] Page Search (tabs livres/listes)
+- [x] Page Lists + Create + Edit
+- [x] Page Profile
+- [x] Page Login (placeholder)
+- [x] Types TypeScript complets
+- [x] Mock data (lib/data.ts)
+- [x] Images locales (src/media/)
 
-### 📋 Prochaines étapes
-- [ ] Pages à concevoir (non maquettées):
-  - [ ] Login/Register
-  - [ ] Rating modal
-  - [ ] Edit list (/lists/[id]/edit)
-  - [ ] Settings / Edit profile
-  - [ ] 404 Error page
-- [ ] Connecter à l'API Google Books + Supabase
+### 📋 Prochaine Phase: Backend (Priorité Haute)
+Voir `tasks/todo.md` pour le plan détaillé.
 
-## Système de Statuts de Lecture
-- **Aucun statut** = le livre n'est pas dans la bibliothèque
-- **À lire** = ajouté à la liste "À lire"
-- **Lu** = dans la bibliothèque, avec date + note + critique optionnelle
+1. **Configuration Supabase**
+   - [ ] Installer et configurer client
+   - [ ] Créer schéma DB (10 tables)
+   - [ ] Variables d'environnement
 
-## Types de Membres
-1. **Membre du club** - Adhérent gratuit de base
-2. **Membre honoraire** - Participation active (critiques, ajouts de livres)
-3. **Membre bienfaiteur** - Aide financière
-4. **Membre d'honneur** - Distinction spéciale de la direction
+2. **API Google Books**
+   - [ ] Créer lib/googleBooks.ts
+   - [ ] Recherche et détails livres
+
+3. **Authentification**
+   - [ ] Supabase Auth
+   - [ ] Pages login/register fonctionnelles
+   - [ ] Middleware routes protégées
+
+4. **Server Actions**
+   - [ ] CRUD reviews, lists, books
+   - [ ] Follows, likes
+
+### 📋 Pages Manquantes
+- [ ] /register
+- [ ] /profile/settings
+- [ ] /not-found.tsx (404)
+
+### 📋 Corrections à Faire
+- [ ] Fixer bug Tailwind dans CommentCard
+- [ ] Centraliser labels badges
+- [ ] Ajouter pagination
+- [ ] ARIA labels sur RatingStars
 
 ## Notes Techniques
 - Layout Desktop: 1500px max-width
 - Content area: 800px
 - Sidebar: 220px
 - Responsive breakpoint mobile: 768px
-- Build: ✅ Successful
+- Build: ✅ Successful (23 pages générées)
 
 ## Commandes
 ```bash
@@ -143,10 +200,11 @@ npm run lint   # Linting
 ```
 
 ## Pour reprendre le projet
-1. Lire ce fichier pour comprendre l'état actuel
-2. Consulter le Figma (frame "Pour Claude" node-id=155-3815)
-3. Vérifier les types dans `src/types/index.ts`
-4. Continuer avec les pages restantes
+1. Lire `tasks/todo.md` pour le plan d'action
+2. Consulter `tasks/lessons.md` pour les patterns
+3. Consulter le Figma (frame "Pour Claude" node-id=155-3815)
+4. Vérifier les types dans `src/types/index.ts`
+5. Commencer par la configuration Supabase
 
 ---
-*Dernière mise à jour: Session 2 - Toutes les pages principales créées (Search, Lists, Profile, Author)*
+*Dernière mise à jour: Session 3 - Audit complet + Plan d'action backend (16 mars 2026)*

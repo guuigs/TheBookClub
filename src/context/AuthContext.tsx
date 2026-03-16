@@ -34,6 +34,7 @@ interface AuthContextValue {
     displayName: string
   ) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -127,9 +128,15 @@ export function AuthProvider({
     await supabase.auth.signOut()
   }
 
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id)
+    }
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, profile, session, loading, signIn, signUp, signOut }}
+      value={{ user, profile, session, loading, signIn, signUp, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

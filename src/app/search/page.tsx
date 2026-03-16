@@ -5,9 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Input } from "@/components/ui";
-import { BookCard, ListCard } from "@/components/features";
+import { BookCard, ListCard, MemberCard } from "@/components/features";
 import { createClient } from "@/lib/supabase/browser";
-import type { Book, BookList, MemberBadge } from "@/types";
+import type { Book, BookList, User, MemberBadge } from "@/types";
 
 type SearchTab = "books" | "lists" | "users";
 type SortOption = "popular" | "rating" | "recent";
@@ -26,6 +26,21 @@ function mapBook(row: any): Book {
     averageRating: Number(row.average_rating ?? 0),
     totalVotes: Number(row.total_votes ?? 0),
     ratingDistribution: [],
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapUser(row: any): User {
+  return {
+    id: row.id,
+    username: row.username ?? "",
+    displayName: row.display_name ?? "",
+    avatarUrl: row.avatar_url ?? undefined,
+    badge: (row.badge as MemberBadge) ?? "member",
+    booksRead: Number(row.books_rated ?? 0),
+    listsCount: Number(row.lists_count ?? 0),
+    followersCount: Number(row.followers_count ?? 0),
+    followingCount: Number(row.following_count ?? 0),
   };
 }
 
@@ -74,6 +89,7 @@ function SearchContent() {
   const [query, setQuery] = useState(initialQuery);
   const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [allLists, setAllLists] = useState<BookList[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [activeTab, setActiveTab] = useState<SearchTab>("books");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -98,6 +114,12 @@ function SearchContent() {
       )
       .then(({ data }) => {
         if (data) setAllLists(data.map(mapList));
+      });
+    supabase
+      .from("profiles_with_stats")
+      .select("*")
+      .then(({ data }) => {
+        if (data) setAllUsers(data.map(mapUser));
       });
   }, []);
 
@@ -134,6 +156,20 @@ function SearchContent() {
         l.description?.toLowerCase().includes(q)
     );
   }, [allLists, query]);
+
+  const filteredUsers = useMemo(() => {
+    if (!query.trim()) return allUsers;
+    const q = query.toLowerCase();
+    return allUsers.filter(
+      (u) =>
+        u.displayName.toLowerCase().includes(q) ||
+        u.username.toLowerCase().includes(q)
+    );
+  }, [allUsers, query]);
+
+  const sortedUsers = useMemo(() => {
+    return [...filteredUsers].sort((a, b) => b.followersCount - a.followersCount);
+  }, [filteredUsers]);
 
   const handleSortChange = (newSort: SortOption) => {
     if (newSort === sortBy) {
@@ -183,7 +219,7 @@ function SearchContent() {
               >
                 {tab === "books" && `Livres (${filteredBooks.length})`}
                 {tab === "lists" && `Listes (${filteredLists.length})`}
-                {tab === "users" && "Utilisateurs"}
+                {tab === "users" && `Utilisateurs (${filteredUsers.length})`}
               </button>
             ))}
           </div>
@@ -246,10 +282,18 @@ function SearchContent() {
         )}
 
         {activeTab === "users" && (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <p className="text-t3 font-semibold text-dark">Recherche d&apos;utilisateurs</p>
-            <p className="text-body text-gray">Cette fonctionnalité arrive bientôt</p>
-          </div>
+          sortedUsers.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+              {sortedUsers.map((user) => (
+                <MemberCard key={user.id} user={user} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <p className="text-t3 font-semibold text-dark">Aucun utilisateur trouvé</p>
+              <p className="text-body text-gray">Essayez avec d&apos;autres mots-clés</p>
+            </div>
+          )
         )}
       </main>
 

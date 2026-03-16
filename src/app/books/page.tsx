@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { BookCard } from "@/components/features";
+import { Pagination } from "@/components/ui";
 import { createClient } from "@/lib/supabase/browser";
 import type { Book } from "@/types";
 
@@ -40,6 +41,8 @@ function BooksContent() {
   const [books, setBooks] = useState<Book[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 24;
 
   useEffect(() => {
     const supabase = createClient();
@@ -68,6 +71,17 @@ function BooksContent() {
       return sortDirection === "desc" ? comparison : -comparison;
     });
   }, [books, sortBy, sortDirection]);
+
+  const totalPages = Math.ceil(sortedBooks.length / ITEMS_PER_PAGE);
+  const paginatedBooks = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return sortedBooks.slice(start, start + ITEMS_PER_PAGE);
+  }, [sortedBooks, currentPage]);
+
+  // Reset to page 1 when sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sortBy, sortDirection]);
 
   const handleSortChange = (newSort: SortOption) => {
     if (newSort === sortBy) {
@@ -116,7 +130,7 @@ function BooksContent() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5" aria-live="polite">
-          {sortedBooks.map((book) => (
+          {paginatedBooks.map((book) => (
             <BookCard key={book.id} book={book} size="md" showTitle showAuthor />
           ))}
         </div>
@@ -125,6 +139,15 @@ function BooksContent() {
           <div className="flex flex-col items-center justify-center py-20 gap-4" role="status" aria-live="polite">
             <p className="text-t3 font-semibold text-dark">Aucun livre trouvé</p>
           </div>
+        )}
+
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            className="mt-10"
+          />
         )}
       </main>
 

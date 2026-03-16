@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
-import { CommentCard, SectionHeader } from "@/components/features";
+import { CommentCard, SectionHeader, ProfileTabs } from "@/components/features";
 import { Avatar, Badge } from "@/components/ui";
 import { getProfileById } from "@/lib/db/profiles";
 import { createClient } from "@/lib/supabase/server";
@@ -87,12 +87,7 @@ export default async function ProfileCommentsPage({
           </div>
         </div>
 
-        <div className="flex gap-10 mb-[60px]">
-          <Link href={`/profile/${id}`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Profil</Link>
-          <Link href={`/profile/${id}/books`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Livres</Link>
-          <span className="text-t4 font-semibold text-primary cursor-pointer">Critiques</span>
-          <Link href={`/profile/${id}/lists`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Listes</Link>
-        </div>
+        <ProfileTabs profileId={id} />
 
         <section className="flex flex-col gap-7">
           <SectionHeader

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
-import { ListCard, SectionHeader } from "@/components/features";
+import { ListCard, SectionHeader, ProfileTabs } from "@/components/features";
 import { Avatar, Badge } from "@/components/ui";
 import { getProfileById } from "@/lib/db/profiles";
 import { getListsByUserId } from "@/lib/db/lists";
@@ -54,12 +54,7 @@ export default async function ProfileListsPage({
           </div>
         </div>
 
-        <div className="flex gap-10 mb-[60px]">
-          <Link href={`/profile/${id}`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Profil</Link>
-          <Link href={`/profile/${id}/books`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Livres</Link>
-          <Link href={`/profile/${id}/comments`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Critiques</Link>
-          <span className="text-t4 font-semibold text-primary cursor-pointer">Listes</span>
-        </div>
+        <ProfileTabs profileId={id} />
 
         <section className="flex flex-col gap-7">
           <SectionHeader

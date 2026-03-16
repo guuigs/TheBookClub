@@ -100,6 +100,138 @@ export async function createList(
   return { id: data?.id ?? null, error: error?.message ?? null }
 }
 
+export async function updateList(
+  listId: string,
+  title: string,
+  description?: string
+): Promise<{ error: string | null }> {
+  const supabase = createBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Vous devez être connecté.' }
+
+  // Verify ownership
+  const { data: list } = await supabase
+    .from('book_lists')
+    .select('author_id')
+    .eq('id', listId)
+    .single()
+
+  if (!list || list.author_id !== user.id) {
+    return { error: 'Vous ne pouvez modifier que vos propres listes.' }
+  }
+
+  const { error } = await supabase
+    .from('book_lists')
+    .update({ title, description, updated_at: new Date().toISOString() })
+    .eq('id', listId)
+
+  return { error: error?.message ?? null }
+}
+
+export async function updateListBooks(
+  listId: string,
+  bookIds: string[]
+): Promise<{ error: string | null }> {
+  const supabase = createBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Vous devez être connecté.' }
+
+  // Verify ownership
+  const { data: list } = await supabase
+    .from('book_lists')
+    .select('author_id')
+    .eq('id', listId)
+    .single()
+
+  if (!list || list.author_id !== user.id) {
+    return { error: 'Vous ne pouvez modifier que vos propres listes.' }
+  }
+
+  // Delete existing items
+  await supabase
+    .from('book_list_items')
+    .delete()
+    .eq('list_id', listId)
+
+  // Insert new items
+  if (bookIds.length > 0) {
+    const { error } = await supabase
+      .from('book_list_items')
+      .insert(bookIds.map((book_id) => ({ list_id: listId, book_id })))
+    if (error) return { error: error.message }
+  }
+
+  // Update list timestamp
+  await supabase
+    .from('book_lists')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', listId)
+
+  return { error: null }
+}
+
+export async function deleteList(
+  listId: string
+): Promise<{ error: string | null }> {
+  const supabase = createBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Vous devez être connecté.' }
+
+  // Verify ownership
+  const { data: list } = await supabase
+    .from('book_lists')
+    .select('author_id')
+    .eq('id', listId)
+    .single()
+
+  if (!list || list.author_id !== user.id) {
+    return { error: 'Vous ne pouvez supprimer que vos propres listes.' }
+  }
+
+  // Delete items first (foreign key)
+  await supabase
+    .from('book_list_items')
+    .delete()
+    .eq('list_id', listId)
+
+  // Delete likes
+  await supabase
+    .from('list_likes')
+    .delete()
+    .eq('list_id', listId)
+
+  // Delete list
+  const { error } = await supabase
+    .from('book_lists')
+    .delete()
+    .eq('id', listId)
+
+  return { error: error?.message ?? null }
+}
+
+export async function isListLikedByUser(listId: string): Promise<boolean> {
+  const supabase = createBrowserClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return false
+
+  const { data } = await supabase
+    .from('list_likes')
+    .select('list_id')
+    .eq('user_id', user.id)
+    .eq('list_id', listId)
+    .single()
+
+  return !!data
+}
+
 export async function toggleListLike(
   listId: string
 ): Promise<{ liked: boolean; error: string | null }> {

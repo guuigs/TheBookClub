@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui";
 import type { User } from "@/types";
 
 export interface MemberCardProps {
@@ -71,13 +72,14 @@ export function MemberCard({ user, onFollow, showFollowButton = false, className
       </Link>
 
       {showFollowButton && (
-        <button
+        <Button
+          variant="primary"
+          size="xs"
           onClick={onFollow}
           aria-label={`Suivre ${user.displayName}`}
-          className="px-3 py-1 rounded-lg text-xs font-medium bg-dark text-white hover:opacity-90 transition-opacity tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           Suivre
-        </button>
+        </Button>
       )}
     </div>
   );

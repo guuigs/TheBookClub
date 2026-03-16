@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Heart, Share2, Edit, Trash2 } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
-import { Button, Avatar, Badge } from "@/components/ui";
-import { BookCard } from "@/components/features";
+import { Avatar, Badge } from "@/components/ui";
+import { BookCard, ListActions } from "@/components/features";
 import { getListById } from "@/lib/db/lists";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,6 +23,18 @@ export default async function ListDetailPage({
 
   const { data: { user } } = await supabase.auth.getUser();
   const isOwner = user?.id === list.author.id;
+
+  // Check if current user has liked this list
+  let isLiked = false;
+  if (user) {
+    const { data: likeData } = await supabase
+      .from("list_likes")
+      .select("list_id")
+      .eq("user_id", user.id)
+      .eq("list_id", id)
+      .single();
+    isLiked = !!likeData;
+  }
 
   const formattedDate = list.updatedAt.toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -69,29 +81,12 @@ export default async function ListDetailPage({
 
             <div className="flex-1" />
 
-            <div className="flex items-center gap-3">
-              <Button variant="primary">
-                <Heart className="w-5 h-5 mr-2" />
-                J&apos;aime
-              </Button>
-              <Button variant="secondary">
-                <Share2 className="w-5 h-5 mr-2" />
-                Partager
-              </Button>
-              {isOwner && (
-                <>
-                  <Link href={`/lists/${id}/edit`}>
-                    <Button variant="secondary">
-                      <Edit className="w-5 h-5 mr-2" />
-                      Modifier
-                    </Button>
-                  </Link>
-                  <Button variant="secondary">
-                    <Trash2 className="w-5 h-5" />
-                  </Button>
-                </>
-              )}
-            </div>
+            <ListActions
+              listId={id}
+              isOwner={isOwner}
+              initialLiked={isLiked}
+              initialLikesCount={list.likesCount}
+            />
           </div>
         </div>
 

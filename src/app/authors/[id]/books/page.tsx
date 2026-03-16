@@ -33,35 +33,29 @@ export default async function AuthorBooksPage({
   };
 
   const { data: booksData } = await supabase
-    .from("books")
-    .select("id, title, cover_url, description, published_year, genre, average_rating, total_votes, rating_distribution, author:authors(id, name, bio, photo_url, books_count)")
-    .eq("author_id", id);
+    .from("books_with_stats")
+    .select("*")
+    .eq("author_id", id)
+    .order("total_votes", { ascending: false });
 
-  const authorBooks: Book[] = (booksData ?? []).map((b) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawAuthor = b.author as any;
-    const a: Record<string, unknown> | null = Array.isArray(rawAuthor) ? (rawAuthor[0] ?? null) : (rawAuthor ?? null);
-    return {
-      id: b.id,
-      title: b.title,
-      coverUrl: b.cover_url ?? "",
-      description: b.description ?? "",
-      publishedYear: b.published_year ?? 0,
-      genre: b.genre ?? "",
-      averageRating: b.average_rating ?? 0,
-      totalVotes: b.total_votes ?? 0,
-      ratingDistribution: (b.rating_distribution as number[]) ?? [],
-      author: a
-        ? {
-            id: a.id as string,
-            name: a.name as string,
-            bio: (a.bio as string) ?? undefined,
-            photoUrl: (a.photo_url as string) ?? undefined,
-            booksCount: (a.books_count as number) ?? 0,
-          }
-        : author,
-    };
-  });
+  const authorBooks: Book[] = (booksData ?? []).map((b) => ({
+    id: b.id,
+    title: b.title,
+    coverUrl: b.cover_url ?? "",
+    description: b.description ?? "",
+    publishedYear: b.published_year ?? 0,
+    genre: b.genre ?? "",
+    averageRating: Number(b.average_rating ?? 0),
+    totalVotes: Number(b.total_votes ?? 0),
+    ratingDistribution: [],
+    author: {
+      id: b.author_id ?? "",
+      name: b.author_name ?? author.name,
+      bio: b.author_bio ?? undefined,
+      photoUrl: b.author_photo_url ?? undefined,
+      booksCount: 0,
+    },
+  }));
 
   return (
     <div className="min-h-screen flex flex-col bg-white">

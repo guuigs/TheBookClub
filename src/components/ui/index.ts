@@ -16,3 +16,8 @@ export type { BadgeProps } from "./Badge";
 
 export { InteractiveStarRating } from "./InteractiveStarRating";
 export type { InteractiveStarRatingProps } from "./InteractiveStarRating";
+
+export { Pagination } from "./Pagination";
+export type { PaginationProps } from "./Pagination";
+
+export { ToastProvider, useToast } from "./Toast";

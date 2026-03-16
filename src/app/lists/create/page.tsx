@@ -80,7 +80,7 @@ export default function CreateListPage() {
       );
     }
 
-    router.push("/lists");
+    router.push(`/lists/${id}`);
   };
 
   return (

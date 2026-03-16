@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Header, Footer } from "@/components/layout";
-import { BookCard, SectionHeader } from "@/components/features";
+import { BookCard, SectionHeader, ProfileTabs } from "@/components/features";
 import { Avatar, Badge } from "@/components/ui";
 import { getProfileById } from "@/lib/db/profiles";
 import { getBooks } from "@/lib/db/books";
@@ -65,12 +65,7 @@ export default async function ProfileBooksPage({
           </div>
         </div>
 
-        <div className="flex gap-10 mb-[60px]">
-          <Link href={`/profile/${id}`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Profil</Link>
-          <span className="text-t4 font-semibold text-primary">Livres</span>
-          <Link href={`/profile/${id}/comments`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Critiques</Link>
-          <Link href={`/profile/${id}/lists`} className="text-t4 font-semibold text-dark hover:text-primary transition-colors">Listes</Link>
-        </div>
+        <ProfileTabs profileId={id} />
 
         <section className="flex flex-col gap-7">
           <SectionHeader

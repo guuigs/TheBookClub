@@ -150,21 +150,20 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
+  // Function to fetch all homepage data
+  const fetchData = async () => {
     const supabase = createClient();
 
     // Popular books
-    supabase
+    const { data: booksData } = await supabase
       .from("books_with_stats")
       .select("*")
       .order("total_votes", { ascending: false })
-      .limit(4)
-      .then(({ data }) => {
-        if (data) setPopularBooks(data.map(mapBook));
-      });
+      .limit(4);
+    if (booksData) setPopularBooks(booksData.map(mapBook));
 
     // Recent comments with book info
-    supabase
+    const { data: commentsData } = await supabase
       .from("comments")
       .select(
         `*, user:profiles(id, username, display_name, avatar_url, badge),
@@ -172,13 +171,11 @@ export default function Home() {
          likes_count:comment_likes(count)`
       )
       .order("created_at", { ascending: false })
-      .limit(6)
-      .then(({ data }) => {
-        if (data) setRecentComments(data.map(mapComment));
-      });
+      .limit(6);
+    if (commentsData) setRecentComments(commentsData.map(mapComment));
 
     // Popular lists
-    supabase
+    const { data: listsData } = await supabase
       .from("book_lists")
       .select(
         `id, title, description, author_id, created_at, updated_at,
@@ -187,25 +184,40 @@ export default function Home() {
          likes_count:list_likes(count),
          books_count:book_list_items(count)`
       )
-      .limit(4)
-      .then(({ data }) => {
-        if (data) {
-          const sorted = data
-            .map(mapList)
-            .sort((a, b) => b.likesCount - a.likesCount);
-          setPopularLists(sorted);
-        }
-      });
+      .limit(4);
+    if (listsData) {
+      const sorted = listsData
+        .map(mapList)
+        .sort((a, b) => b.likesCount - a.likesCount);
+      setPopularLists(sorted);
+    }
 
     // Featured members
-    supabase
+    const { data: membersData } = await supabase
       .from("profiles_with_stats")
       .select("*")
       .order("followers_count", { ascending: false })
-      .limit(5)
-      .then(({ data }) => {
-        if (data) setFeaturedMembers(data.map(mapProfile));
-      });
+      .limit(5);
+    if (membersData) setFeaturedMembers(membersData.map(mapProfile));
+  };
+
+  // Fetch on mount
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Refetch when page becomes visible (user returns from another page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   return (
