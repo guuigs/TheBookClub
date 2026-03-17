@@ -43,7 +43,7 @@ export function ListActions({
     setIsDeleting(true);
     const { error } = await deleteList(listId);
     if (!error) {
-      router.push("/lists");
+      router.push("/listes");
     } else {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -55,7 +55,7 @@ export function ListActions({
   };
 
   const handleCopyLink = async () => {
-    const url = `${window.location.origin}/lists/${listId}`;
+    const url = `${window.location.origin}/listes/${listId}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -78,7 +78,7 @@ export function ListActions({
         </Button>
         {isOwner && (
           <>
-            <Link href={`/lists/${listId}/edit`}>
+            <Link href={`/listes/${listId}/edit`}>
               <Button variant="secondary">
                 <Edit className="w-5 h-5 mr-2" />
                 Modifier
@@ -152,8 +152,8 @@ export function ListActions({
             <div className="flex items-center gap-3 p-3 bg-gray/10 rounded-lg">
               <span className="text-sm font-medium text-dark flex-1 truncate">
                 {typeof window !== "undefined"
-                  ? `${window.location.origin}/lists/${listId}`
-                  : `/lists/${listId}`}
+                  ? `${window.location.origin}/listes/${listId}`
+                  : `/listes/${listId}`}
               </span>
               <Button variant="primary" size="xs" onClick={handleCopyLink}>
                 {copied ? "Copie !" : "Copier"}

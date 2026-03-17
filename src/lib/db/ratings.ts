@@ -52,3 +52,28 @@ export async function deleteRating(
     .eq('book_id', bookId)
   return { error: error?.message ?? null }
 }
+
+export async function getRatingDistribution(
+  bookId: string
+): Promise<number[]> {
+  const supabase = createBrowserClient()
+
+  const { data } = await supabase
+    .from('ratings')
+    .select('score')
+    .eq('book_id', bookId)
+
+  // Initialize array with 10 zeros (index 0 = score 1, index 9 = score 10)
+  const distribution = Array(10).fill(0)
+
+  if (data) {
+    data.forEach((rating) => {
+      const index = rating.score - 1 // score 1 goes to index 0, etc.
+      if (index >= 0 && index < 10) {
+        distribution[index]++
+      }
+    })
+  }
+
+  return distribution
+}

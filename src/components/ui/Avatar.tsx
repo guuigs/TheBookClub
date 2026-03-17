@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { getBadgeIcon, getBadgeLabel } from "@/lib/constants/badges";
 import type { MemberBadge } from "@/types";
 
 export interface AvatarProps {
@@ -16,20 +17,6 @@ const sizeClasses = {
   md: "w-8 h-8",
   lg: "w-20 h-20",
   xl: "w-24 h-24",
-};
-
-const badgeIcons: Record<MemberBadge, string> = {
-  member: "/images/badges/member.svg",
-  honorary: "/images/badges/honorary.svg",
-  benefactor: "/images/badges/benefactor.svg",
-  honor: "/images/badges/honor.svg",
-};
-
-const badgeLabels: Record<MemberBadge, string> = {
-  member: "Membre du club",
-  honorary: "Membre honoraire",
-  benefactor: "Membre bienfaiteur",
-  honor: "Membre d'honneur",
 };
 
 export function Avatar({
@@ -65,11 +52,11 @@ export function Avatar({
       {badge && (
         <div
           className="absolute -bottom-0.5 -right-0.5"
-          title={badgeLabels[badge]}
+          title={getBadgeLabel(badge)}
         >
           <Image
-            src={badgeIcons[badge]}
-            alt={badgeLabels[badge]}
+            src={getBadgeIcon(badge)}
+            alt={getBadgeLabel(badge)}
             width={16}
             height={16}
           />

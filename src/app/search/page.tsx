@@ -93,6 +93,7 @@ function SearchContent() {
   const [activeTab, setActiveTab] = useState<SearchTab>("books");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
@@ -100,27 +101,39 @@ function SearchContent() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.from("books_with_stats").select("*").then(({ data }) => {
-      if (data) setAllBooks(data.map(mapBook));
-    });
-    supabase
-      .from("book_lists")
-      .select(
-        `id, title, description, author_id, created_at, updated_at,
-         author:profiles(id, username, display_name, avatar_url, badge),
-         items:book_list_items(book:books(id, title, cover_url, author_id)),
-         likes_count:list_likes(count),
-         books_count:book_list_items(count)`
-      )
-      .then(({ data }) => {
-        if (data) setAllLists(data.map(mapList));
-      });
-    supabase
-      .from("profiles_with_stats")
-      .select("*")
-      .then(({ data }) => {
-        if (data) setAllUsers(data.map(mapUser));
-      });
+
+    async function fetchData() {
+      const [booksRes, listsRes, usersRes, authRes] = await Promise.all([
+        supabase.from("books_with_stats").select("*"),
+        supabase.from("book_lists").select(
+          `id, title, description, author_id, created_at, updated_at,
+           author:profiles(id, username, display_name, avatar_url, badge),
+           items:book_list_items(book:books(id, title, cover_url, author_id)),
+           likes_count:list_likes(count),
+           books_count:book_list_items(count)`
+        ),
+        supabase.from("profiles_with_stats").select("*"),
+        supabase.auth.getUser(),
+      ]);
+
+      if (booksRes.data) setAllBooks(booksRes.data.map(mapBook));
+      if (listsRes.data) setAllLists(listsRes.data.map(mapList));
+      if (usersRes.data) setAllUsers(usersRes.data.map(mapUser));
+
+      // Fetch user ratings if logged in
+      const user = authRes.data.user;
+      if (user) {
+        const { data: ratingsData } = await supabase
+          .from("ratings")
+          .select("book_id, score")
+          .eq("user_id", user.id);
+        if (ratingsData) {
+          setUserRatings(new Map(ratingsData.map(r => [r.book_id, r.score])));
+        }
+      }
+    }
+
+    fetchData();
   }, []);
 
   const filteredBooks = useMemo(() => {
@@ -255,7 +268,7 @@ function SearchContent() {
           sortedBooks.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
               {sortedBooks.map((book) => (
-                <BookCard key={book.id} book={book} size="md" showTitle showAuthor />
+                <BookCard key={book.id} book={book} size="md" showTitle showAuthor myRating={userRatings.get(book.id) ?? null} />
               ))}
             </div>
           ) : (

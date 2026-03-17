@@ -67,19 +67,57 @@ export async function getCommentsByBookId(
 export async function createComment(
   bookId: string,
   content: string
-): Promise<{ error: string | null }> {
+): Promise<{ data: Comment | null; error: string | null }> {
   const supabase = createBrowserClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: 'Vous devez être connecté pour commenter.' }
+  if (!user) return { data: null, error: 'Vous devez être connecté pour commenter.' }
 
-  const { error } = await supabase.from('comments').insert({
-    book_id: bookId,
-    user_id: user.id,
-    content: content.slice(0, 2000),
-  })
-  return { error: error?.message ?? null }
+  // Get user profile for the comment
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, avatar_url, badge')
+    .eq('id', user.id)
+    .single()
+
+  // Insert comment and get back the created row
+  const { data: insertedComment, error } = await supabase
+    .from('comments')
+    .insert({
+      book_id: bookId,
+      user_id: user.id,
+      content: content.slice(0, 2000),
+    })
+    .select('id, book_id, content, created_at')
+    .single()
+
+  if (error || !insertedComment) {
+    return { data: null, error: error?.message ?? 'Erreur lors de la création du commentaire.' }
+  }
+
+  // Build the complete comment object
+  const comment: Comment = {
+    id: insertedComment.id,
+    user: {
+      id: profile?.id ?? user.id,
+      username: profile?.username ?? '',
+      displayName: profile?.display_name ?? 'Utilisateur',
+      avatarUrl: profile?.avatar_url ?? undefined,
+      badge: profile?.badge ?? 'member',
+      booksRead: 0,
+      listsCount: 0,
+      followersCount: 0,
+      followingCount: 0,
+    },
+    bookId: insertedComment.book_id,
+    content: insertedComment.content,
+    createdAt: new Date(insertedComment.created_at),
+    likesCount: 0,
+    isLikedByCurrentUser: false,
+  }
+
+  return { data: comment, error: null }
 }
 
 export async function toggleCommentLike(

@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { Avatar, RatingStars, Badge, Button } from "@/components/ui";
+import { Avatar, RatingStars, Badge } from "@/components/ui";
+import { formatDate } from "@/lib/utils/format";
 import type { Comment, Book } from "@/types";
 
 export interface HomeCommentCardProps {
@@ -17,11 +18,7 @@ export function HomeCommentCard({
   book,
   className = "",
 }: HomeCommentCardProps) {
-  const formattedDate = new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(comment.createdAt);
+  const formattedDate = formatDate(comment.createdAt);
 
   // Truncate content
   const maxLength = 200;
@@ -34,7 +31,7 @@ export function HomeCommentCard({
     <div className={`flex gap-4 w-full max-w-[540px] ${className}`}>
       {/* Book Cover */}
       <Link
-        href={`/books/${book.id}`}
+        href={`/livres/${book.id}`}
         className="relative w-[100px] h-[150px] bg-cream shrink-0 overflow-hidden"
       >
         {book.coverUrl ? (
@@ -59,7 +56,7 @@ export function HomeCommentCard({
         {/* Header */}
         <div className="flex items-center gap-2 flex-wrap">
           <Link
-            href={`/profile/${comment.user.id}`}
+            href={`/account/${comment.user.id}`}
             className="flex items-center gap-1"
           >
             <Avatar
@@ -70,7 +67,7 @@ export function HomeCommentCard({
           </Link>
           <div className="flex items-center">
             <Link
-              href={`/profile/${comment.user.id}`}
+              href={`/account/${comment.user.id}`}
               className="text-[16px] font-medium text-dark tracking-tight hover:text-primary transition-colors"
             >
               {comment.user.username}
@@ -87,7 +84,7 @@ export function HomeCommentCard({
 
         {/* Book Title */}
         <Link
-          href={`/books/${book.id}`}
+          href={`/livres/${book.id}`}
           className="font-display text-[22px] text-dark hover:text-primary transition-colors"
         >
           {book.title}
@@ -100,7 +97,7 @@ export function HomeCommentCard({
 
         {isLong && (
           <Link
-            href={`/books/${book.id}`}
+            href={`/livres/${book.id}`}
             className="text-[14px] font-medium text-primary underline tracking-tight hover:opacity-80"
           >
             voir plus

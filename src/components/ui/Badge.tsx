@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { BADGE_CONFIG } from "@/lib/constants/badges";
 import type { MemberBadge } from "@/types";
 
 export interface BadgeProps {
@@ -10,44 +11,10 @@ export interface BadgeProps {
   className?: string;
 }
 
-const badgeConfig: Record<
-  MemberBadge,
-  {
-    icon: string;
-    label: string;
-    description: string;
-  }
-> = {
-  member: {
-    icon: "/images/badges/member.svg",
-    label: "membre du club",
-    description:
-      "Adhérent gratuit au Book Club. Ce membre lit, note, consulte les avis du club.",
-  },
-  honorary: {
-    icon: "/images/badges/honorary.svg",
-    label: "membre honoraire",
-    description:
-      "Membre connu pour sa participation au Book Club, rajout de livres encore inconnus, notation, critique.",
-  },
-  benefactor: {
-    icon: "/images/badges/benefactor.svg",
-    label: "membre bienfaiteur",
-    description:
-      "Le bienfaiteur est reconnu pour avoir aidé financièrement le Book Club.",
-  },
-  honor: {
-    icon: "/images/badges/honor.svg",
-    label: "membre d'honneur",
-    description:
-      "La direction décide d'honorer particulièrement une personne selon son implication, son aide financière particulièrement élevée, son travail de promotion du club, etc.",
-  },
-};
-
 const sizeConfig = {
-  sm: 16,
-  md: 20,
-  lg: 32,
+  sm: 20,
+  md: 28,
+  lg: 40,
 };
 
 export function Badge({
@@ -56,7 +23,7 @@ export function Badge({
   size = "sm",
   className = "",
 }: BadgeProps) {
-  const config = badgeConfig[type];
+  const config = BADGE_CONFIG[type];
   const iconSize = sizeConfig[size];
 
   return (

@@ -1,4 +1,5 @@
 import { createClient as createBrowserClient } from '@/lib/supabase/browser'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { User } from '@/types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,14 +24,14 @@ function mapProfileRow(row: any): User {
   }
 }
 
-export async function getProfiles(): Promise<User[]> {
-  const supabase = createBrowserClient()
+export async function getProfiles(client?: SupabaseClient): Promise<User[]> {
+  const supabase = client ?? createBrowserClient()
   const { data } = await supabase.from('profiles_with_stats').select('*')
   return (data ?? []).map(mapProfileRow)
 }
 
-export async function getProfileById(id: string): Promise<User | null> {
-  const supabase = createBrowserClient()
+export async function getProfileById(id: string, client?: SupabaseClient): Promise<User | null> {
+  const supabase = client ?? createBrowserClient()
   const { data } = await supabase
     .from('profiles_with_stats')
     .select('*')

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui";
+import { getBadgeIcon, getBadgeLabel } from "@/lib/constants/badges";
 import type { User } from "@/types";
 
 export interface MemberCardProps {
@@ -12,24 +13,10 @@ export interface MemberCardProps {
   className?: string;
 }
 
-const badgeLabels = {
-  member: "membre du club",
-  honorary: "membre honoraire",
-  benefactor: "membre bienfaiteur",
-  honor: "membre d'honneur",
-};
-
-const badgeIcons: Record<string, string> = {
-  member: "/images/badges/member.svg",
-  honorary: "/images/badges/honorary.svg",
-  benefactor: "/images/badges/benefactor.svg",
-  honor: "/images/badges/honor.svg",
-};
-
 export function MemberCard({ user, onFollow, showFollowButton = false, className = "" }: MemberCardProps) {
   return (
     <div className={`group flex flex-col items-center gap-3 w-[160px] ${className}`}>
-      <Link href={`/profile/${user.id}`} className="flex flex-col items-center gap-3 w-full">
+      <Link href={`/account/${user.id}`} className="flex flex-col items-center gap-3 w-full">
         {/* Avatar with badge top-right */}
         <div className="relative w-[110px] h-[110px]">
           <div className="relative w-full h-full rounded-full overflow-hidden bg-cream">
@@ -52,8 +39,8 @@ export function MemberCard({ user, onFollow, showFollowButton = false, className
           {/* Badge: top-right, slightly offset, z-10 */}
           <div className="absolute -top-1 -right-1 z-10">
             <Image
-              src={badgeIcons[user.badge]}
-              alt={badgeLabels[user.badge]}
+              src={getBadgeIcon(user.badge)}
+              alt={getBadgeLabel(user.badge)}
               width={24}
               height={24}
             />
@@ -66,7 +53,7 @@ export function MemberCard({ user, onFollow, showFollowButton = false, className
             {user.displayName}
           </h3>
           <p className="text-[11px] font-medium text-gray tracking-tight">
-            {user.followersCount} abonnés
+            {user.followersCount} abonnes
           </p>
         </div>
       </Link>

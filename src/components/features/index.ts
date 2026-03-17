@@ -1,6 +1,6 @@
 // Feature Components
 export { BookCard, BookCardOverlay } from "./BookCard";
-export type { BookCardProps } from "./BookCard";
+export type { BookCardProps, BookCardVariant, BookCardSize } from "./BookCard";
 
 export { RatingBlock } from "./RatingBlock";
 export type { RatingBlockProps } from "./RatingBlock";
@@ -10,9 +10,6 @@ export type { CommentCardProps } from "./CommentCard";
 
 export { ListCard } from "./ListCard";
 export type { ListCardProps } from "./ListCard";
-
-export { FriendActivityCard } from "./FriendActivityCard";
-export type { FriendActivityCardProps } from "./FriendActivityCard";
 
 export { SectionHeader } from "./SectionHeader";
 export type { SectionHeaderProps } from "./SectionHeader";
@@ -44,4 +41,17 @@ export type { BookStatusButtonProps } from "./BookStatusButton";
 export { FavoriteButton } from "./FavoriteButton";
 export type { FavoriteButtonProps } from "./FavoriteButton";
 
+export { FavoritesManager } from "./FavoritesManager";
+
+export { FavoritesSection } from "./FavoritesSection";
+
 export { ProfileTabs } from "./ProfileTabs";
+
+export { ProfileCommentsFilter } from "./ProfileCommentsFilter";
+
+export { ProfileBooksFilter } from "./ProfileBooksFilter";
+
+export { ProfileListsFilter } from "./ProfileListsFilter";
+
+export { ProfileCardWithRating } from "./ProfileCardWithRating";
+export type { ProfileCardWithRatingProps } from "./ProfileCardWithRating";

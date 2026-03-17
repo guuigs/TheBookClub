@@ -1,4 +1,5 @@
 import { createClient as createBrowserClient } from '@/lib/supabase/browser'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Book } from '@/types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,8 +24,8 @@ function mapBookRow(row: any): Book {
   }
 }
 
-export async function getBooks(): Promise<Book[]> {
-  const supabase = createBrowserClient()
+export async function getBooks(client?: SupabaseClient): Promise<Book[]> {
+  const supabase = client ?? createBrowserClient()
   const { data } = await supabase
     .from('books_with_stats')
     .select('*')
@@ -32,8 +33,8 @@ export async function getBooks(): Promise<Book[]> {
   return (data ?? []).map(mapBookRow)
 }
 
-export async function getBookById(id: string): Promise<Book | null> {
-  const supabase = createBrowserClient()
+export async function getBookById(id: string, client?: SupabaseClient): Promise<Book | null> {
+  const supabase = client ?? createBrowserClient()
   const { data } = await supabase
     .from('books_with_stats')
     .select('*')

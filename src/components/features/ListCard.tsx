@@ -17,7 +17,7 @@ export function ListCard({ list, className = "" }: ListCardProps) {
 
   return (
     <Link
-      href={`/lists/${list.id}`}
+      href={`/listes/${list.id}`}
       className={`group flex flex-col gap-3 w-[390px] ${className}`}
     >
       {/* Book Covers Preview - Overlapping */}

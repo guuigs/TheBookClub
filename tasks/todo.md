@@ -1,125 +1,137 @@
 # Todo - TheBookClub
 
-> **Derniere mise a jour**: 16 mars 2026
-> **Session active**: Retours utilisateur post-audit UX
+> **Derniere mise a jour**: 17 mars 2026
+> **Session active**: Retours utilisateur - Round 2
 
 ---
 
-## CRITIQUE - Bugs bloquants
+## EN ATTENTE - Changements majeurs
 
-### 1. BUG: Creation de liste donne erreur 404
-- [ ] Diagnostiquer l'erreur (route, API, Supabase?)
-- [ ] Corriger et tester
+### 1. Avatar: remplacer upload par gradient genere
+**Changement majeur**: Plus d'upload de photo, generer un gradient unique par user.
+- [ ] Creer fonction `generateGradient(userId)` - deterministe base sur l'ID
+- [ ] Ajouter effet grain leger (CSS ou SVG filter)
+- [ ] Supprimer la logique d'upload dans Settings
+- [ ] Mettre a jour Avatar.tsx pour utiliser le gradient si pas de photo
+- [ ] Migration: garder les photos existantes ou forcer gradient?
 
-### 2. BUG: Commentaires ne se mettent pas a jour
-- [ ] Verifier cote Supabase (RLS, permissions)
-- [ ] Verifier le code client (mutation, refresh)
-
----
-
-## HAUTE - Coherence UX
-
-### 3. Uniformiser affichage "ma note" (etoiles orange)
-**Probleme**: Sur certaines pages (profil) les etoiles de ma note sont orange, sur d'autres (accueil, livres) non.
-- [ ] Passer `myRating` a tous les `BookCard` sur toutes les pages
-- [ ] Verifier: accueil, /books, /search, /lists/[id]
-
-### 4. Coups de coeur: gerer uniquement depuis profil
-**Changement UX**: L'utilisateur doit aller sur son profil pour choisir ses 4 coups de coeur (experience intentionnelle).
-- [ ] Retirer `FavoriteButton` de `/books/[id]/page.tsx`
-- [ ] Ajouter interface de gestion des favoris sur `/profile/[id]` (si own profile)
-- [ ] Garder la limite de 4 livres
-
-### 5. Creer 4 profils fictifs pour tests
-**Objectif**: Tester toutes les fonctionnalites sociales (follow, amis, commentaires, notes).
-- [ ] Profil 1: Actif (beaucoup de notes, commentaires, listes)
-- [ ] Profil 2: Ami du user actuel (pour tester "notes de mes amis")
-- [ ] Profil 3: Nouveau membre (peu d'activite)
-- [ ] Profil 4: Membre bienfaiteur (badge special)
+### 2. Page livre: restaurer sections "Lecture en ligne" et "Commander"
+**Contexte**: Ces sections existaient mais ont ete masquees.
+- [ ] Schema DB: ajouter `book_links` table (book_id, type, url, label)
+  - Types: `reading_free`, `purchase`
+  - Max 2 liens par type
+- [ ] Afficher "Non disponible" si aucun lien
+- [ ] Adapter le formulaire de suggestion de modification pour ces liens
 
 ---
 
-## MOYENNE - Fonctionnalites
+## BASSE - Polish
 
-### 6. Accueil: section "Commentaires populaires cette semaine"
-- [ ] Query: commentaires les plus likes des 7 derniers jours
-- [ ] Afficher section sur la homepage
-
-### 7. Creer page "Membres remercies" + lien footer
-**Contexte**: La page /support mentionne des contreparties mais pas de page dediee.
-- [ ] Creer `/supporters` ou `/thanks`
-- [ ] Lister les membres bienfaiteurs/honoraires
-- [ ] Ajouter lien dans le footer
-
-### 8. Page livre: ajouter notations et critiques des amis
-- [ ] Section "Vos amis ont note ce livre" (si applicable)
-- [ ] Section "Critiques de vos amis" (si applicable)
-- [ ] Section "Commentaires populaires" (top likes)
-
-### 9. Filtres dans "Mes livres notes" (profil)
-- [ ] Reprendre les filtres de /books (genre, note, recherche)
-- [ ] Appliquer a `/profile/[id]/books`
-
-### 10. Filtres ferres a gauche (pages livres/listes/membres)
-- [ ] Aligner les filtres a gauche au lieu de centres
-- [ ] Pages concernees: /books, /lists, /members
-
-### 11. Page membres: enlever le titre
-- [ ] Retirer "Membres du club", arriver direct aux filtres
-
-### 12. Filtres livres: renommer "annee" en "recent"
-- [ ] Changer le label du filtre
+### 3. Nettoyage code post-refactoring
+- [ ] Supprimer imports inutilises
+- [ ] Verifier coherence des noms de fonctions
 
 ---
 
-## BASSE - Polish visuel
+## ARCHIVES - Taches precedemment completees
 
-### 13. Footer: reduire taille globale et boutons
-- [ ] Reduire padding/spacing du footer
-- [ ] Reduire taille des boutons (passer en `sm` ou `xs`)
+<details>
+<summary>Session 17 mars 2026 - Restructuration architecture</summary>
 
-### 14. Badges profil: +2 taille, positionner a gauche
-- [ ] Augmenter la taille du badge de 2 niveaux
-- [ ] Positionner a gauche de l'avatar (au lieu de droite/dessus)
+**Routes renommees (conformite ARCHITECTURE.md):**
+- [x] `/books` → `/livres`
+- [x] `/lists` → `/listes`
+- [x] `/members` → `/membres`
+- [x] `/profile` → `/account`
+- [x] `/authors` → `/auteur`
+- [x] Tous les liens internes mis a jour (~30 fichiers)
 
-### 15. Page livre: retirer icon du bouton "Ajouter a ma liste"
-- [ ] Enlever l'icone, garder juste le texte
+**Nouveaux composants et pages:**
+- [x] `/formulaire-modification/[id]` - page de suggestion de modification
+- [x] `ProfileCardWithRating` - composant MemberCard + note
+- [x] Sections "Notes de mes amis" et "Critiques de mes amis" sur page livre
 
-### 16. Page livre: "Signaler une erreur" -> "Suggerer une modification"
-- [ ] Renommer le lien
-- [ ] Deplacer en bas de page
+</details>
 
-### 17. Page livre: reduire espacement infos pratiques par 2
-- [ ] Reduire gap entre label (Auteur) et valeur (Victor Hugo)
-- [ ] Actuellement trop espace
+<details>
+<summary>Session 17 mars 2026 - Bugs et UX Round 2</summary>
 
-### 18. Page livre: repartition des votes avec donnees reelles
-- [ ] Verifier si mock data ou vraie requete
-- [ ] Connecter a la vraie distribution des notes
+**Bugs critiques corriges:**
+- [x] BUG: Commentaires n'apparaissent pas apres creation
+  - `createComment()` retourne maintenant le commentaire cree
+  - Ajout direct au state local au lieu de refetch
+- [x] BUG: Creation liste erreur 404 persistante
+  - Ajout toast d'erreur pour feedback utilisateur
+  - Ajout `router.refresh()` avant navigation
+  - Meilleur logging dans `getListById()`
+- [x] BUG: Etoiles orange non dynamiques dans BookCard
+  - Page livre: section "Du meme auteur" - fetch des ratings utilisateur
+  - Pages auteur: myRating passe au BookCard
+  - Page auteur/books: myRating passe au BookCard
 
----
+**UX ameliorations:**
+- [x] Badge profil repositionne a droite de l'avatar (4 pages)
+- [x] Homepage: sections commentaires/listes toujours visibles (message si vide)
+- [x] Bouton "Modifier" coups de coeur: style discret, icone retiree
+- [x] Page `/librairies` creee + lien dans le footer
+- [x] Lien "voir les librairies affiliees" sur page livre
 
-## HISTORIQUE - Completions session 16 mars 2026
+**Filtres pages profil:**
+- [x] `/profile/[id]/comments` - tri Recent/Populaire
+- [x] `/profile/[id]/books` - recherche + tri Recent/Ma note
+- [x] `/profile/[id]/lists` - recherche + tri Recent/Populaire
+- [x] Nouveaux composants: ProfileCommentsFilter, ProfileBooksFilter, ProfileListsFilter
 
-### Audit UX initial - TERMINE
-- [x] UX-C1: Settings sauvegarde fonctionnelle
-- [x] UX-C2: Upload avatar Supabase Storage
-- [x] UX-C3: Redirect creation liste vers /lists/{id}
-- [x] UX-C4: Modal changement mot de passe
-- [x] UX-H1: Boutons uniformises (variants xs, danger, isLoading)
-- [x] UX-H2: Menu dropdown avatar avec liens rapides
-- [x] UX-H3: Systeme coups de coeur (FavoriteButton, favorites.ts)
-- [x] UX-M1: Toasts de feedback (Toast.tsx, ToastProvider)
-- [x] UX-M4: ProfileTabs avec underline actif
-- [x] UX-B1: Placeholders masques (pdf, liens)
-- [x] UX-B4: Page 404 personnalisee
-- [x] Migration SQL user_favorites appliquee
+</details>
 
-### Audit fonctionnel initial - TERMINE
-- [x] C1+C2: Edit liste corrige (bon nom de table, sauvegarde)
-- [x] C3: Boutons page liste connectes (ListActions component)
-- [x] C4: Bouton follow connecte (FollowButton component)
-- [x] H1+H5: Logique coups de coeur et derniers livres notes
+<details>
+<summary>Session 17 mars 2026 - Refactoring</summary>
+
+- [x] `src/lib/mappers.ts` - centralisation mappers
+- [x] `src/lib/constants/badges.ts` - centralisation badges
+- [x] `src/lib/utils/format.ts` - formatDate, truncateText
+- [x] `src/lib/utils/auth.ts` - getAuthenticatedUser
+- [x] BookCard unifie (3 variants)
+- [x] Suppression HomeBookCard.tsx
+- [x] ~300 lignes de duplication eliminees
+
+</details>
+
+<details>
+<summary>Session 17 mars 2026 - Corrections UX</summary>
+
+- [x] Bug creation liste 404 (premier fix)
+- [x] Bug commentaires non mis a jour (callbacks)
+- [x] Etoiles orange uniformisees
+- [x] Coups de coeur via profil
+- [x] Filtres ferres a gauche
+- [x] Page membres titre sr-only
+- [x] "Annee" -> "Recent"
+- [x] Footer taille reduite
+- [x] Badges taille augmentee
+- [x] Page livre: icone bouton retiree
+- [x] Page livre: "Suggerer une modification" en bas
+- [x] Page livre: espacement infos reduit
+- [x] Page livre: repartition votes reelle
+
+</details>
+
+<details>
+<summary>Session 16 mars 2026</summary>
+
+- [x] Settings sauvegarde
+- [x] Upload avatar Supabase Storage
+- [x] Redirect creation liste
+- [x] Modal mot de passe
+- [x] Boutons uniformises
+- [x] Menu dropdown avatar
+- [x] Systeme coups de coeur
+- [x] Toasts feedback
+- [x] ProfileTabs underline
+- [x] Page 404 personnalisee
+- [x] ListActions, FollowButton
+
+</details>
 
 ---
 

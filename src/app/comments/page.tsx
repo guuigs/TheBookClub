@@ -5,7 +5,8 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { HomeCommentCard } from "@/components/features";
 import { createClient } from "@/lib/supabase/browser";
-import type { Comment, Book, MemberBadge } from "@/types";
+import { mapCommentWithBook } from "@/lib/mappers";
+import type { Comment, Book } from "@/types";
 
 type SortOption = "popular" | "recent";
 type SortDirection = "asc" | "desc";
@@ -25,43 +26,8 @@ export default function CommentsPage() {
          likes_count:comment_likes(count)`
       )
       .order("created_at", { ascending: false })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then(({ data }) => {
-        if (!data) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapped = data.map((row: any) => ({
-          comment: {
-            id: row.id,
-            user: {
-              id: row.user?.id ?? "",
-              username: row.user?.username ?? "",
-              displayName: row.user?.display_name ?? "",
-              avatarUrl: row.user?.avatar_url ?? undefined,
-              badge: (row.user?.badge as MemberBadge) ?? "member",
-              booksRead: 0,
-              listsCount: 0,
-              followersCount: 0,
-              followingCount: 0,
-            },
-            bookId: row.book_id,
-            content: row.content,
-            createdAt: new Date(row.created_at),
-            likesCount: Number(row.likes_count?.[0]?.count ?? 0),
-          } as Comment,
-          book: {
-            id: row.book?.id ?? row.book_id,
-            title: row.book?.title ?? "",
-            author: { id: "", name: "", booksCount: 0 },
-            coverUrl: row.book?.cover_url ?? "",
-            description: "",
-            publishedYear: 0,
-            genre: "",
-            averageRating: 0,
-            totalVotes: 0,
-            ratingDistribution: [],
-          } as Book,
-        }));
-        setItems(mapped);
+        if (data) setItems(data.map(mapCommentWithBook));
       });
   }, []);
 
@@ -91,7 +57,7 @@ export default function CommentsPage() {
 
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: "popular", label: "Populaire" },
-    { value: "recent", label: "Récent" },
+    { value: "recent", label: "Recent" },
   ];
 
   return (
@@ -102,7 +68,7 @@ export default function CommentsPage() {
           Commentaires populaires
         </h1>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+        <div className="flex flex-wrap items-center gap-3 mb-10">
           <span className="text-body font-medium text-gray">Trier par :</span>
           {sortOptions.map((option) => (
             <button
@@ -133,7 +99,7 @@ export default function CommentsPage() {
 
         {sortedItems.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <p className="text-t3 font-semibold text-dark">Aucun commentaire trouvé</p>
+            <p className="text-t3 font-semibold text-dark">Aucun commentaire trouve</p>
           </div>
         )}
       </main>

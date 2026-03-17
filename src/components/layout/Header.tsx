@@ -29,9 +29,9 @@ export function Header() {
   }, []);
 
   const navLinks = [
-    { href: "/books", label: "livres" },
-    { href: "/lists", label: "listes" },
-    { href: "/members", label: "membres du club" },
+    { href: "/livres", label: "livres" },
+    { href: "/listes", label: "listes" },
+    { href: "/membres", label: "membres du club" },
   ];
 
   const isActive = (href: string) => pathname.startsWith(href);
@@ -114,7 +114,7 @@ export function Header() {
                     </div>
                     <nav className="py-1">
                       <Link
-                        href={`/profile/${user.id}`}
+                        href={`/account/${user.id}`}
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
                       >
@@ -122,7 +122,7 @@ export function Header() {
                         Mon profil
                       </Link>
                       <Link
-                        href={`/profile/${user.id}/books`}
+                        href={`/account/${user.id}/livres`}
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
                       >
@@ -130,7 +130,7 @@ export function Header() {
                         Mes livres
                       </Link>
                       <Link
-                        href={`/profile/${user.id}/lists`}
+                        href={`/account/${user.id}/listes`}
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark hover:bg-cream transition-colors"
                       >
@@ -219,7 +219,7 @@ export function Header() {
               {user && profile ? (
                 <>
                   <Link
-                    href={`/profile/${user.id}`}
+                    href={`/account/${user.id}`}
                     className="flex items-center gap-3 py-2"
                     onClick={() => setMobileMenuOpen(false)}
                   >

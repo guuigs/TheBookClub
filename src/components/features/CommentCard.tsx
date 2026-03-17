@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, Pencil, Trash2, X, Check } from "lucide-react";
+import { Heart, Pencil, Trash2, Check } from "lucide-react";
 import { Avatar, RatingStars, Badge, Button } from "@/components/ui";
 import { toggleCommentLike, updateComment, deleteComment } from "@/lib/db/comments";
 import { useAuth } from "@/context/AuthContext";
+import { formatDate } from "@/lib/utils/format";
 import type { Comment } from "@/types";
 
 export interface CommentCardProps {
@@ -45,11 +46,7 @@ export function CommentCard({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const formattedDate = new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(comment.createdAt);
+  const formattedDate = formatDate(comment.createdAt);
 
   const handleLike = async () => {
     if (isLiking) return;
@@ -103,7 +100,7 @@ export function CommentCard({
   return (
     <article className={`flex gap-4 w-full ${className}`}>
       {/* Avatar */}
-      <Link href={`/members/${comment.user.id}`} className="shrink-0">
+      <Link href={`/account/${comment.user.id}`} className="shrink-0">
         <Avatar
           src={comment.user.avatarUrl}
           alt={comment.user.username}
@@ -117,7 +114,7 @@ export function CommentCard({
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center">
             <Link
-              href={`/members/${comment.user.id}`}
+              href={`/account/${comment.user.id}`}
               className="text-body font-medium text-dark tracking-tight hover:text-primary transition-colors"
             >
               {comment.user.username}

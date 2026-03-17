@@ -1,4 +1,5 @@
 import { createClient as createBrowserClient } from '@/lib/supabase/browser'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { BookList } from '@/types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,8 +54,8 @@ const LIST_SELECT = `
   books_count:book_list_items(count)
 `
 
-export async function getLists(): Promise<BookList[]> {
-  const supabase = createBrowserClient()
+export async function getLists(client?: SupabaseClient): Promise<BookList[]> {
+  const supabase = client ?? createBrowserClient()
   const { data } = await supabase
     .from('book_lists')
     .select(LIST_SELECT)
@@ -62,18 +63,23 @@ export async function getLists(): Promise<BookList[]> {
   return (data ?? []).map(mapListRow)
 }
 
-export async function getListById(id: string): Promise<BookList | null> {
-  const supabase = createBrowserClient()
-  const { data } = await supabase
+export async function getListById(id: string, client?: SupabaseClient): Promise<BookList | null> {
+  const supabase = client ?? createBrowserClient()
+  const { data, error } = await supabase
     .from('book_lists')
     .select(LIST_SELECT)
     .eq('id', id)
     .single()
+
+  if (error) {
+    console.error('[getListById] Error fetching list:', error.message, 'id:', id)
+    return null
+  }
   return data ? mapListRow(data) : null
 }
 
-export async function getListsByUserId(userId: string): Promise<BookList[]> {
-  const supabase = createBrowserClient()
+export async function getListsByUserId(userId: string, client?: SupabaseClient): Promise<BookList[]> {
+  const supabase = client ?? createBrowserClient()
   const { data } = await supabase
     .from('book_lists')
     .select(LIST_SELECT)

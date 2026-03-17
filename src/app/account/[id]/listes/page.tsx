@@ -1,0 +1,64 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Header, Footer } from "@/components/layout";
+import { SectionHeader, ProfileTabs, ProfileListsFilter } from "@/components/features";
+import { Avatar, Badge } from "@/components/ui";
+import { getProfileById } from "@/lib/db/profiles";
+import { getListsByUserId } from "@/lib/db/lists";
+import { createClient } from "@/lib/supabase/server";
+import { getBadgeLabel } from "@/lib/constants/badges";
+
+export default async function ProfileListsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const supabase = await createClient();
+  const [profile, userLists] = await Promise.all([
+    getProfileById(id, supabase),
+    getListsByUserId(id, supabase),
+  ]);
+
+  if (!profile) notFound();
+
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const isOwnProfile = authUser?.id === id;
+
+  return (
+    <div className="min-h-screen flex flex-col bg-white">
+      <Header />
+
+      <main className="flex-1 w-full max-w-[900px] mx-auto px-5 py-[120px]">
+        <div className="flex items-center gap-5 mb-10">
+          <div className="relative">
+            <Avatar src={profile.avatarUrl} alt={profile.displayName} size="lg" className="w-[80px] h-[80px]" />
+            <div className="absolute -top-1 -right-2">
+              <Badge type={profile.badge} size="md" />
+            </div>
+          </div>
+          <div>
+            <Link href={`/account/${id}`}>
+              <h1 className="font-display text-t2 text-dark tracking-tight hover:text-primary transition-colors">
+                {profile.displayName}
+              </h1>
+            </Link>
+            <p className="text-body text-gray">{getBadgeLabel(profile.badge)}</p>
+          </div>
+        </div>
+
+        <ProfileTabs profileId={id} />
+
+        <section className="flex flex-col gap-7">
+          <SectionHeader
+            title={isOwnProfile ? "Mes listes" : `Listes de ${profile.displayName}`}
+          />
+          <ProfileListsFilter lists={userLists} />
+        </section>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

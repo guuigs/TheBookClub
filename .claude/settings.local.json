@@ -10,7 +10,8 @@
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
       "mcp__supabase__list_projects",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(cmd //c \"ren books livres\")"
     ]
   },
   "enableAllProjectMcpServers": true,

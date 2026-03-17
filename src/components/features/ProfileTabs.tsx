@@ -11,10 +11,10 @@ export function ProfileTabs({ profileId }: ProfileTabsProps) {
   const pathname = usePathname();
 
   const tabs = [
-    { label: "Profil", href: `/profile/${profileId}`, exact: true },
-    { label: "Livres", href: `/profile/${profileId}/books`, exact: false },
-    { label: "Critiques", href: `/profile/${profileId}/comments`, exact: false },
-    { label: "Listes", href: `/profile/${profileId}/lists`, exact: false },
+    { label: "Profil", href: `/account/${profileId}`, exact: true },
+    { label: "Livres", href: `/account/${profileId}/livres`, exact: false },
+    { label: "Critiques", href: `/account/${profileId}/critiques`, exact: false },
+    { label: "Listes", href: `/account/${profileId}/listes`, exact: false },
   ];
 
   const isActive = (tab: typeof tabs[0]) => {
