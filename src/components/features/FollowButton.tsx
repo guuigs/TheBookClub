@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, useToast } from "@/components/ui";
 import { followUser, unfollowUser } from "@/lib/db/follows";
+import { useAuth } from "@/context/AuthContext";
 
 export interface FollowButtonProps {
   targetUserId: string;
@@ -18,8 +19,9 @@ export function FollowButton({
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
+  const { requireAuth } = useAuth();
 
-  const handleToggle = async () => {
+  const performToggle = async () => {
     setIsLoading(true);
 
     if (isFollowing) {
@@ -43,6 +45,10 @@ export function FollowButton({
     }
 
     setIsLoading(false);
+  };
+
+  const handleToggle = () => {
+    requireAuth(performToggle);
   };
 
   return (

@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
-import { CommentCard, SectionHeader, ProfileTabs, ProfileCommentsFilter } from "@/components/features";
+import { SectionHeader, ProfileTabs, ProfileCommentsWithBooks } from "@/components/features";
 import { Avatar, Badge } from "@/components/ui";
 import { getProfileById } from "@/lib/db/profiles";
 import { createClient } from "@/lib/supabase/server";
-import { mapComment } from "@/lib/mappers";
+import { mapCommentWithBook } from "@/lib/mappers";
 import { getBadgeLabel } from "@/lib/constants/badges";
 
 export default async function ProfileCommentsPage({
@@ -26,13 +26,14 @@ export default async function ProfileCommentsPage({
   const { data: commentsData } = await supabase
     .from("comments")
     .select(
-      `*, user:profiles(id, username, display_name, avatar_url, badge),
+      `*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge),
+       book:books!comments_book_id_fkey(id, title, cover_url),
        likes_count:comment_likes(count)`
     )
     .eq("user_id", id)
     .order("created_at", { ascending: false });
 
-  const userComments = (commentsData ?? []).map(mapComment);
+  const userComments = (commentsData ?? []).map(mapCommentWithBook);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -64,7 +65,7 @@ export default async function ProfileCommentsPage({
               title={isOwnProfile ? "Mes critiques" : `Critiques de ${profile.displayName}`}
             />
           </div>
-          <ProfileCommentsFilter comments={userComments} />
+          <ProfileCommentsWithBooks comments={userComments} />
         </section>
       </main>
 

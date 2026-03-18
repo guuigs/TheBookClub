@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import { AuthProvider } from "@/context/AuthContext";
-import { ToastProvider } from "@/components/ui";
+import { ToastProvider, AuthRequiredModal, CookieConsent } from "@/components/ui";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -57,6 +57,8 @@ export default async function RootLayout({
         <AuthProvider initialSession={session}>
           <ToastProvider>
             {children}
+            <AuthRequiredModal />
+            <CookieConsent />
           </ToastProvider>
         </AuthProvider>
       </body>

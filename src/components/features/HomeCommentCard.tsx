@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Avatar, RatingStars, Badge } from "@/components/ui";
+import { toggleCommentLike } from "@/lib/db/comments";
 import { formatDate } from "@/lib/utils/format";
+import { useAuth } from "@/context/AuthContext";
 import type { Comment, Book } from "@/types";
 
 export interface HomeCommentCardProps {
@@ -18,6 +21,11 @@ export function HomeCommentCard({
   book,
   className = "",
 }: HomeCommentCardProps) {
+  const [isLiked, setIsLiked] = useState(comment.isLikedByCurrentUser ?? false);
+  const [likesCount, setLikesCount] = useState(comment.likesCount);
+  const [isLiking, setIsLiking] = useState(false);
+  const { requireAuth } = useAuth();
+
   const formattedDate = formatDate(comment.createdAt);
 
   // Truncate content
@@ -26,6 +34,29 @@ export function HomeCommentCard({
   const truncatedContent = isLong
     ? comment.content.slice(0, maxLength) + "..."
     : comment.content;
+
+  const performLike = async () => {
+    if (isLiking) return;
+    setIsLiking(true);
+
+    const wasLiked = isLiked;
+    setIsLiked(!wasLiked);
+    setLikesCount((prev) => (wasLiked ? prev - 1 : prev + 1));
+
+    const { liked, error } = await toggleCommentLike(comment.id);
+    if (error) {
+      setIsLiked(wasLiked);
+      setLikesCount((prev) => (wasLiked ? prev + 1 : prev - 1));
+    } else {
+      setIsLiked(liked);
+    }
+
+    setIsLiking(false);
+  };
+
+  const handleLike = () => {
+    requireAuth(performLike);
+  };
 
   return (
     <div className={`flex gap-4 w-full max-w-[540px] ${className}`}>
@@ -105,12 +136,25 @@ export function HomeCommentCard({
         )}
 
         {/* Likes */}
-        <div className="flex items-center gap-1">
-          <Heart className="w-3 h-3 text-dark" />
-          <span className="text-[13px] font-normal text-dark">
-            {comment.likesCount} like{comment.likesCount !== 1 ? "s" : ""}
+        <button
+          type="button"
+          onClick={handleLike}
+          aria-label={isLiked ? "Ne plus aimer ce commentaire" : "Aimer ce commentaire"}
+          aria-pressed={isLiked}
+          className="flex items-center gap-1 group w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${
+              isLiked
+                ? "fill-primary text-primary"
+                : "text-dark group-hover:text-primary"
+            }`}
+            aria-hidden="true"
+          />
+          <span className="text-[13px] font-medium text-dark group-hover:text-primary transition-colors">
+            {likesCount} like{likesCount !== 1 ? "s" : ""}
           </span>
-        </div>
+        </button>
       </div>
     </div>
   );

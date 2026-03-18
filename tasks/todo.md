@@ -1,7 +1,44 @@
 # Todo - TheBookClub
 
-> **Derniere mise a jour**: 17 mars 2026
-> **Session active**: Retours utilisateur - Round 2
+> **Derniere mise a jour**: 18 mars 2026
+> **Session active**: Securite Supabase
+
+---
+
+## URGENT - Securite Supabase (Deploiement requis)
+
+**Contexte**: Audit de securite suite a mail de vulnerabilite.
+**Rapport complet**: `tasks/SECURITY_AUDIT_2026-03-18.md`
+
+### Migrations a executer dans Supabase SQL Editor
+
+**ORDRE OBLIGATOIRE:**
+
+1. [ ] `tasks/migrations/002_complete_rls_security.sql` - RLS pour toutes les tables
+2. [ ] `tasks/migrations/003_secure_views_and_functions.sql` - Fonctions securisees
+3. [ ] `tasks/migrations/004_storage_security.sql` - Politiques storage
+
+### Verification post-deploiement
+
+```sql
+-- Verifier RLS actif
+SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';
+
+-- Lister les politiques
+SELECT tablename, policyname FROM pg_policies WHERE schemaname = 'public';
+```
+
+### Tests fonctionnels requis
+
+- [ ] Connexion/deconnexion
+- [ ] Noter un livre
+- [ ] Voir distribution des notes
+- [ ] Ajouter/supprimer commentaire
+- [ ] Liker un commentaire
+- [ ] Creer/modifier/supprimer une liste
+- [ ] Suivre/ne plus suivre un utilisateur
+- [ ] Voir favoris sur un profil
+- [ ] Upload avatar
 
 ---
 

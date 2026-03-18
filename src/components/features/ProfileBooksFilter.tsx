@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search } from "lucide-react";
+import { Search, Plus, Minus } from "lucide-react";
 import { BookCard } from "./BookCard";
 import type { Book } from "@/types";
 
 type SortOption = "recent" | "rating";
+type SortDirection = "asc" | "desc";
 
 interface ProfileBooksFilterProps {
   books: Book[];
@@ -16,6 +17,7 @@ interface ProfileBooksFilterProps {
 export function ProfileBooksFilter({ books, ratingMap, ratingDatesMap }: ProfileBooksFilterProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const filteredAndSortedBooks = useMemo(() => {
     let result = [...books];
@@ -33,18 +35,29 @@ export function ProfileBooksFilter({ books, ratingMap, ratingDatesMap }: Profile
       result.sort((a, b) => {
         const dateA = ratingDatesMap.get(a.id) ?? "";
         const dateB = ratingDatesMap.get(b.id) ?? "";
-        return dateB.localeCompare(dateA);
+        const comparison = dateB.localeCompare(dateA);
+        return sortDirection === "desc" ? comparison : -comparison;
       });
     } else if (sortBy === "rating") {
       result.sort((a, b) => {
         const ratingA = ratingMap.get(a.id) ?? 0;
         const ratingB = ratingMap.get(b.id) ?? 0;
-        return ratingB - ratingA;
+        const comparison = ratingB - ratingA;
+        return sortDirection === "desc" ? comparison : -comparison;
       });
     }
 
     return result;
-  }, [books, searchQuery, sortBy, ratingMap, ratingDatesMap]);
+  }, [books, searchQuery, sortBy, sortDirection, ratingMap, ratingDatesMap]);
+
+  const handleSortChange = (newSort: SortOption) => {
+    if (newSort === sortBy) {
+      setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"));
+    } else {
+      setSortBy(newSort);
+      setSortDirection("desc");
+    }
+  };
 
   if (books.length === 0) {
     return (
@@ -74,24 +87,36 @@ export function ProfileBooksFilter({ books, ratingMap, ratingDatesMap }: Profile
           <span className="text-small text-gray">Trier par :</span>
           <div className="flex gap-2">
             <button
-              onClick={() => setSortBy("recent")}
-              className={`px-3 py-1.5 text-small font-medium rounded-lg transition-colors ${
+              onClick={() => handleSortChange("recent")}
+              className={`flex items-center gap-1 px-3 py-1.5 text-small font-medium rounded-lg transition-colors ${
                 sortBy === "recent"
-                  ? "bg-primary text-white"
+                  ? "bg-dark text-white"
                   : "bg-gray/10 text-dark hover:bg-gray/20"
               }`}
             >
               Récent
+              {sortBy === "recent" &&
+                (sortDirection === "desc" ? (
+                  <Plus className="w-3.5 h-3.5" />
+                ) : (
+                  <Minus className="w-3.5 h-3.5" />
+                ))}
             </button>
             <button
-              onClick={() => setSortBy("rating")}
-              className={`px-3 py-1.5 text-small font-medium rounded-lg transition-colors ${
+              onClick={() => handleSortChange("rating")}
+              className={`flex items-center gap-1 px-3 py-1.5 text-small font-medium rounded-lg transition-colors ${
                 sortBy === "rating"
-                  ? "bg-primary text-white"
+                  ? "bg-dark text-white"
                   : "bg-gray/10 text-dark hover:bg-gray/20"
               }`}
             >
-              Ma note
+              Note
+              {sortBy === "rating" &&
+                (sortDirection === "desc" ? (
+                  <Plus className="w-3.5 h-3.5" />
+                ) : (
+                  <Minus className="w-3.5 h-3.5" />
+                ))}
             </button>
           </div>
         </div>

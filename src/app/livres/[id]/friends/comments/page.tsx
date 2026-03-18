@@ -67,7 +67,7 @@ export default function BookFriendsCommentsPage({
       // Get friends' comments for this book
       const { data: commentsData } = await supabase
         .from("comments")
-        .select(`*, user:profiles(id, username, display_name, avatar_url, badge), likes_count:comment_likes(count)`)
+        .select(`*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge), likes_count:comment_likes(count)`)
         .eq("book_id", id)
         .in("user_id", friendIds)
         .order("created_at", { ascending: false });

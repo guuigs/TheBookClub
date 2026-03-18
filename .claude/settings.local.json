@@ -11,7 +11,14 @@
       "Bash(curl:*)",
       "mcp__supabase__list_projects",
       "mcp__supabase__execute_sql",
-      "Bash(cmd //c \"ren books livres\")"
+      "Bash(cmd //c \"ren books livres\")",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__apply_migration",
+      "Bash(npx next dev --no-turbo)",
+      "Bash(npx next --help:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -146,8 +146,7 @@ function DefaultOverlay({ book, myRating }: { book: Book; myRating: number | nul
               <RatingStars
                 rating={myRating}
                 size="sm"
-                variant="light"
-                className="[&_svg]:text-primary [&_svg]:fill-primary [&_svg]:stroke-primary"
+                variant="personal"
               />
               <span className="text-primary font-semibold text-[14px] leading-none">
                 {myRating}/10

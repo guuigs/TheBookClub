@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Plus, Minus, Users } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { MemberCard } from "@/components/features";
 import { useAuth } from "@/context/AuthContext";
@@ -11,6 +11,7 @@ import type { User, MemberBadge } from "@/types";
 type SortOption = "popular" | "alpha";
 type SortDirection = "asc" | "desc";
 type BadgeFilter = "all" | MemberBadge;
+type FollowFilter = "all" | "following";
 
 const badgeFilterLabels: Record<BadgeFilter, string> = {
   all: "Tous",
@@ -44,9 +45,11 @@ function mapProfile(p: Record<string, unknown>): User {
 export default function MembersPage() {
   const { user } = useAuth();
   const [members, setMembers] = useState<User[]>([]);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [badgeFilter, setBadgeFilter] = useState<BadgeFilter>("all");
+  const [followFilter, setFollowFilter] = useState<FollowFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -58,6 +61,24 @@ export default function MembersPage() {
         if (data) setMembers(data.map(mapProfile));
       });
   }, []);
+
+  // Fetch users I'm following
+  useEffect(() => {
+    if (!user) {
+      setFollowingIds(new Set());
+      return;
+    }
+    const supabase = createClient();
+    supabase
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", user.id)
+      .then(({ data }) => {
+        if (data) {
+          setFollowingIds(new Set(data.map(f => f.following_id)));
+        }
+      });
+  }, [user]);
 
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: "popular", label: "Populaire" },
@@ -91,6 +112,10 @@ export default function MembersPage() {
       result = result.filter((u) => u.badge === badgeFilter);
     }
 
+    if (followFilter === "following" && user) {
+      result = result.filter((u) => followingIds.has(u.id));
+    }
+
     result.sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
@@ -105,7 +130,7 @@ export default function MembersPage() {
     });
 
     return result;
-  }, [members, searchQuery, badgeFilter, sortBy, sortDirection]);
+  }, [members, searchQuery, badgeFilter, followFilter, sortBy, sortDirection, user, followingIds]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -128,6 +153,24 @@ export default function MembersPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3" role="toolbar" aria-label="Filtres et tri">
+            {user && (
+              <>
+                <button
+                  onClick={() => setFollowFilter(followFilter === "all" ? "following" : "all")}
+                  aria-pressed={followFilter === "following"}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium tracking-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    followFilter === "following"
+                      ? "bg-dark text-white"
+                      : "bg-gray/10 text-dark hover:bg-gray/20"
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" aria-hidden="true" />
+                  Mes abonnements
+                </button>
+                <div className="w-px h-5 bg-gray/30 mx-1" aria-hidden="true" />
+              </>
+            )}
+
             <span className="text-sm font-medium text-gray" aria-hidden="true">Trier par :</span>
             {sortOptions.map((option) => (
               <button
@@ -143,9 +186,9 @@ export default function MembersPage() {
                 {option.label}
                 {sortBy === option.value &&
                   (sortDirection === "desc" ? (
-                    <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                   ) : (
-                    <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                    <Minus className="w-3.5 h-3.5" aria-hidden="true" />
                   ))}
               </button>
             ))}

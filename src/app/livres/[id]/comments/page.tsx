@@ -52,7 +52,7 @@ export default function BookCommentsPage({
     supabase
       .from("comments")
       .select(
-        `*, user:profiles(id, username, display_name, avatar_url, badge),
+        `*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge),
          likes_count:comment_likes(count)`
       )
       .eq("book_id", id)

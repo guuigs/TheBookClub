@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search } from "lucide-react";
+import { Search, Plus, Minus } from "lucide-react";
 import { ListCard } from "./ListCard";
 import type { BookList } from "@/types";
 
 type SortOption = "recent" | "popular";
+type SortDirection = "asc" | "desc";
 
 interface ProfileListsFilterProps {
   lists: BookList[];
@@ -14,6 +15,7 @@ interface ProfileListsFilterProps {
 export function ProfileListsFilter({ lists }: ProfileListsFilterProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const filteredAndSortedLists = useMemo(() => {
     let result = [...lists];
@@ -28,13 +30,28 @@ export function ProfileListsFilter({ lists }: ProfileListsFilterProps) {
 
     // Sort
     if (sortBy === "recent") {
-      result.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      result.sort((a, b) => {
+        const comparison = b.updatedAt.getTime() - a.updatedAt.getTime();
+        return sortDirection === "desc" ? comparison : -comparison;
+      });
     } else if (sortBy === "popular") {
-      result.sort((a, b) => b.likesCount - a.likesCount);
+      result.sort((a, b) => {
+        const comparison = b.likesCount - a.likesCount;
+        return sortDirection === "desc" ? comparison : -comparison;
+      });
     }
 
     return result;
-  }, [lists, searchQuery, sortBy]);
+  }, [lists, searchQuery, sortBy, sortDirection]);
+
+  const handleSortChange = (newSort: SortOption) => {
+    if (newSort === sortBy) {
+      setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"));
+    } else {
+      setSortBy(newSort);
+      setSortDirection("desc");
+    }
+  };
 
   if (lists.length === 0) {
     return (
@@ -64,24 +81,36 @@ export function ProfileListsFilter({ lists }: ProfileListsFilterProps) {
           <span className="text-small text-gray">Trier par :</span>
           <div className="flex gap-2">
             <button
-              onClick={() => setSortBy("recent")}
-              className={`px-3 py-1.5 text-small font-medium rounded-lg transition-colors ${
+              onClick={() => handleSortChange("recent")}
+              className={`flex items-center gap-1 px-3 py-1.5 text-small font-medium rounded-lg transition-colors ${
                 sortBy === "recent"
-                  ? "bg-primary text-white"
+                  ? "bg-dark text-white"
                   : "bg-gray/10 text-dark hover:bg-gray/20"
               }`}
             >
               Récent
+              {sortBy === "recent" &&
+                (sortDirection === "desc" ? (
+                  <Plus className="w-3.5 h-3.5" />
+                ) : (
+                  <Minus className="w-3.5 h-3.5" />
+                ))}
             </button>
             <button
-              onClick={() => setSortBy("popular")}
-              className={`px-3 py-1.5 text-small font-medium rounded-lg transition-colors ${
+              onClick={() => handleSortChange("popular")}
+              className={`flex items-center gap-1 px-3 py-1.5 text-small font-medium rounded-lg transition-colors ${
                 sortBy === "popular"
-                  ? "bg-primary text-white"
+                  ? "bg-dark text-white"
                   : "bg-gray/10 text-dark hover:bg-gray/20"
               }`}
             >
               Populaire
+              {sortBy === "popular" &&
+                (sortDirection === "desc" ? (
+                  <Plus className="w-3.5 h-3.5" />
+                ) : (
+                  <Minus className="w-3.5 h-3.5" />
+                ))}
             </button>
           </div>
         </div>

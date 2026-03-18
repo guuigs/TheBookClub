@@ -85,8 +85,7 @@ export default function CreateListPage() {
     }
 
     toast.success("Liste créée avec succès !");
-    // Force refresh to ensure server sees new data, then navigate
-    router.refresh();
+    // Navigate to the new list
     router.push(`/listes/${id}`);
   };
 

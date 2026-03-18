@@ -49,6 +49,8 @@ export { ProfileTabs } from "./ProfileTabs";
 
 export { ProfileCommentsFilter } from "./ProfileCommentsFilter";
 
+export { ProfileCommentsWithBooks } from "./ProfileCommentsWithBooks";
+
 export { ProfileBooksFilter } from "./ProfileBooksFilter";
 
 export { ProfileListsFilter } from "./ProfileListsFilter";

@@ -1,126 +1,198 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { BookOpen, BookMarked, ChevronDown, X } from "lucide-react";
-import { Button } from "@/components/ui";
-import { setBookStatus, removeBookStatus, type BookStatus } from "@/lib/db/books";
+import { ChevronDown, Check, Plus, Loader2 } from "lucide-react";
+import { Button, useToast } from "@/components/ui";
+import { getUserListsWithBookStatus, addBookToList, removeBookFromList, createList, ensureDefaultReadingList } from "@/lib/db/lists";
+import { useAuth } from "@/context/AuthContext";
 
 export interface BookStatusButtonProps {
   bookId: string;
-  initialStatus: BookStatus;
+  initialStatus?: "to_read" | "read" | null;
 }
 
-const statusConfig = {
-  to_read: {
-    label: "À lire",
-    icon: BookMarked,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
-  },
-  read: {
-    label: "Lu",
-    icon: BookOpen,
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-  },
-} as const;
+interface UserList {
+  id: string;
+  title: string;
+  hasBook: boolean;
+  isPinned: boolean;
+}
 
 export function BookStatusButton({
   bookId,
-  initialStatus,
 }: BookStatusButtonProps) {
-  const [status, setStatus] = useState<BookStatus>(initialStatus);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [lists, setLists] = useState<UserList[]>([]);
+  const [isLoadingLists, setIsLoadingLists] = useState(false);
+  const [showNewListInput, setShowNewListInput] = useState(false);
+  const [newListTitle, setNewListTitle] = useState("");
+  const [isCreatingList, setIsCreatingList] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { requireAuth, user } = useAuth();
+  const toast = useToast();
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setShowNewListInput(false);
+        setNewListTitle("");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSetStatus = async (newStatus: "to_read" | "read") => {
-    setIsLoading(true);
-    const { error } = await setBookStatus(bookId, newStatus);
-    if (!error) {
-      setStatus(newStatus);
+  // Fetch lists when dropdown opens
+  useEffect(() => {
+    if (isOpen && user) {
+      fetchLists();
     }
-    setIsLoading(false);
-    setIsOpen(false);
+  }, [isOpen, user]);
+
+  const fetchLists = async () => {
+    setIsLoadingLists(true);
+    // Ensure default "À lire" list exists
+    await ensureDefaultReadingList();
+    const { lists: userLists } = await getUserListsWithBookStatus(bookId);
+    setLists(userLists);
+    setIsLoadingLists(false);
   };
 
-  const handleRemoveStatus = async () => {
-    setIsLoading(true);
-    const { error } = await removeBookStatus(bookId);
-    if (!error) {
-      setStatus(null);
-    }
-    setIsLoading(false);
-    setIsOpen(false);
+  const handleToggleDropdown = () => {
+    requireAuth(() => setIsOpen(!isOpen));
   };
 
-  const currentConfig = status ? statusConfig[status] : null;
+  const handleToggleBookInList = async (list: UserList) => {
+    setIsLoading(true);
+    if (list.hasBook) {
+      const { error } = await removeBookFromList(list.id, bookId);
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.info(`Retiré de "${list.title}"`);
+        setLists(prev => prev.map(l => l.id === list.id ? { ...l, hasBook: false } : l));
+      }
+    } else {
+      const { error } = await addBookToList(list.id, bookId);
+      if (error) {
+        toast.error(error);
+      } else {
+        toast.success(`Ajouté à "${list.title}"`);
+        setLists(prev => prev.map(l => l.id === list.id ? { ...l, hasBook: true } : l));
+      }
+    }
+    setIsLoading(false);
+  };
+
+  const handleCreateList = async () => {
+    if (!newListTitle.trim()) return;
+    setIsCreatingList(true);
+    const { id, error } = await createList(newListTitle.trim());
+    if (error) {
+      toast.error(error);
+    } else if (id) {
+      // Add book to the new list
+      await addBookToList(id, bookId);
+      toast.success(`Liste "${newListTitle}" créée et livre ajouté`);
+      setNewListTitle("");
+      setShowNewListInput(false);
+      fetchLists();
+    }
+    setIsCreatingList(false);
+  };
+
+  // Check if book is in any list
+  const isInAnyList = lists.some(l => l.hasBook);
+  const pinnedList = lists.find(l => l.isPinned);
+  const isInPinnedList = pinnedList?.hasBook ?? false;
 
   return (
     <div className="relative" ref={dropdownRef}>
       <Button
-        variant={status ? "secondary" : "primary"}
-        onClick={() => setIsOpen(!isOpen)}
+        variant={isInAnyList ? "secondary" : "primary"}
+        onClick={handleToggleDropdown}
         disabled={isLoading}
-        className={status && currentConfig ? `${currentConfig.bgColor} ${currentConfig.color} border-current` : ""}
+        className={isInPinnedList ? "bg-amber-50 text-amber-600 border-current" : ""}
       >
         {isLoading ? (
-          "..."
-        ) : status && currentConfig ? (
-          <>
-            <currentConfig.icon className="w-5 h-5 mr-2" />
-            {currentConfig.label}
-            <ChevronDown className="w-4 h-4 ml-2" />
-          </>
-        ) : (
-          <>
-            Ajouter à ma liste
-            <ChevronDown className="w-4 h-4 ml-2" />
-          </>
-        )}
+          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+        ) : isInPinnedList ? (
+          <Check className="w-5 h-5 mr-2" />
+        ) : null}
+        {isInPinnedList ? "À lire" : "Ajouter à ma liste"}
+        <ChevronDown className="w-4 h-4 ml-2" />
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray/20 py-2 z-50">
-          <button
-            onClick={() => handleSetStatus("to_read")}
-            className={`w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray/10 transition-colors ${
-              status === "to_read" ? "bg-amber-50 text-amber-600" : "text-dark"
-            }`}
-          >
-            <BookMarked className="w-5 h-5" />
-            À lire
-          </button>
-          <button
-            onClick={() => handleSetStatus("read")}
-            className={`w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray/10 transition-colors ${
-              status === "read" ? "bg-green-50 text-green-600" : "text-dark"
-            }`}
-          >
-            <BookOpen className="w-5 h-5" />
-            Lu
-          </button>
-          {status && (
+        <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray/20 py-2 z-50">
+          {isLoadingLists ? (
+            <div className="px-4 py-3 text-center">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto text-gray" />
+            </div>
+          ) : (
             <>
+              {lists.map((list) => (
+                <button
+                  key={list.id}
+                  onClick={() => handleToggleBookInList(list)}
+                  disabled={isLoading}
+                  className={`w-full px-4 py-2 text-left flex items-center justify-between hover:bg-gray/10 transition-colors ${
+                    list.hasBook ? "text-primary font-medium" : "text-dark"
+                  } ${list.isPinned ? "border-l-2 border-primary" : ""}`}
+                >
+                  <span className="truncate">{list.title}</span>
+                  {list.hasBook && <Check className="w-4 h-4 shrink-0" />}
+                </button>
+              ))}
+
               <div className="h-px bg-gray/20 my-2" />
-              <button
-                onClick={handleRemoveStatus}
-                className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-red-50 text-red-600 transition-colors"
-              >
-                <X className="w-5 h-5" />
-                Retirer de ma liste
-              </button>
+
+              {showNewListInput ? (
+                <div className="px-4 py-2">
+                  <input
+                    type="text"
+                    value={newListTitle}
+                    onChange={(e) => setNewListTitle(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleCreateList()}
+                    placeholder="Nom de la liste..."
+                    className="w-full px-3 py-2 text-sm border border-gray/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    autoFocus
+                    maxLength={100}
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant="discrete"
+                      size="xs"
+                      onClick={() => {
+                        setShowNewListInput(false);
+                        setNewListTitle("");
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      onClick={handleCreateList}
+                      disabled={!newListTitle.trim() || isCreatingList}
+                      isLoading={isCreatingList}
+                    >
+                      Créer
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowNewListInput(true)}
+                  className="w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-gray/10 transition-colors text-primary"
+                >
+                  <Plus className="w-4 h-4" />
+                  Créer une liste
+                </button>
+              )}
             </>
           )}
         </div>

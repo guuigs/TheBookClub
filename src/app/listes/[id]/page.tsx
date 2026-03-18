@@ -7,6 +7,9 @@ import { BookCard, ListActions } from "@/components/features";
 import { getListById } from "@/lib/db/lists";
 import { createClient } from "@/lib/supabase/server";
 
+// Disable caching to always fetch fresh data
+export const dynamic = "force-dynamic";
+
 export default async function ListDetailPage({
   params,
 }: {

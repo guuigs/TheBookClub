@@ -17,18 +17,40 @@ export default function CommentsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase
-      .from("comments")
-      .select(
-        `*, user:profiles(id, username, display_name, avatar_url, badge),
-         book:books(id, title, cover_url),
-         likes_count:comment_likes(count)`
-      )
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) setItems(data.map(mapCommentWithBook));
-      });
+    async function fetchComments() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data } = await supabase
+        .from("comments")
+        .select(
+          `*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge),
+           book:books!comments_book_id_fkey(id, title, cover_url),
+           likes_count:comment_likes(count)`
+        )
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        // Check which comments are liked by current user
+        let likedCommentIds = new Set<string>();
+        if (user) {
+          const { data: likesData } = await supabase
+            .from("comment_likes")
+            .select("comment_id")
+            .eq("user_id", user.id)
+            .in("comment_id", data.map(c => c.id));
+          if (likesData) {
+            likedCommentIds = new Set(likesData.map(l => l.comment_id));
+          }
+        }
+        const mapped = data.map(mapCommentWithBook);
+        mapped.forEach(item => {
+          item.comment.isLikedByCurrentUser = likedCommentIds.has(item.comment.id);
+        });
+        setItems(mapped);
+      }
+    }
+    fetchComments();
   }, []);
 
   const sortedItems = useMemo(() => {
@@ -91,7 +113,7 @@ export default function CommentsPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="flex flex-col gap-8 max-w-[700px]">
           {sortedItems.map(({ comment, book }) => (
             <HomeCommentCard key={comment.id} comment={comment} book={book} />
           ))}

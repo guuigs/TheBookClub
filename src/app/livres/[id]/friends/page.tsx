@@ -66,7 +66,7 @@ export default function BookFriendsPage({
       // Get friends' ratings for this book
       const { data: ratingsData } = await supabase
         .from("ratings")
-        .select(`score, user:profiles(id, username, display_name, avatar_url, badge)`)
+        .select(`score, user:profiles!ratings_user_id_fkey(id, username, display_name, avatar_url, badge)`)
         .eq("book_id", id)
         .in("user_id", friendIds);
 

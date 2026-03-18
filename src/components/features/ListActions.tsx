@@ -6,6 +6,7 @@ import { Heart, Share2, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { toggleListLike, deleteList } from "@/lib/db/lists";
+import { useAuth } from "@/context/AuthContext";
 
 export interface ListActionsProps {
   listId: string;
@@ -21,6 +22,7 @@ export function ListActions({
   initialLikesCount,
 }: ListActionsProps) {
   const router = useRouter();
+  const { requireAuth } = useAuth();
   const [isLiked, setIsLiked] = useState(initialLiked);
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [isLiking, setIsLiking] = useState(false);
@@ -29,7 +31,7 @@ export function ListActions({
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const handleLike = async () => {
+  const performLike = async () => {
     setIsLiking(true);
     const { liked, error } = await toggleListLike(listId);
     if (!error) {
@@ -37,6 +39,10 @@ export function ListActions({
       setLikesCount((prev) => (liked ? prev + 1 : prev - 1));
     }
     setIsLiking(false);
+  };
+
+  const handleLike = () => {
+    requireAuth(performLike);
   };
 
   const handleDelete = async () => {

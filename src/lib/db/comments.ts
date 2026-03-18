@@ -32,10 +32,11 @@ export async function getCommentsByBookId(
   currentUserId?: string
 ): Promise<Comment[]> {
   const supabase = createBrowserClient()
+  // Use explicit FK to avoid "multiple relationships" error
   const { data } = await supabase
     .from('comments')
     .select(
-      `*, user:profiles(id, username, display_name, avatar_url, badge),
+      `*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge),
        likes_count:comment_likes(count)`
     )
     .eq('book_id', bookId)
@@ -189,28 +190,17 @@ export async function deleteComment(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Vous devez être connecté.' }
 
-  // Verify ownership
-  const { data: comment } = await supabase
-    .from('comments')
-    .select('user_id')
-    .eq('id', commentId)
-    .single()
+  // Use secure RPC function that handles cascade deletion
+  // This bypasses RLS to delete other users' likes on our comment
+  const { error } = await supabase
+    .rpc('delete_comment_with_likes', { comment_uuid: commentId })
 
-  if (!comment || comment.user_id !== user.id) {
-    return { error: 'Vous ne pouvez supprimer que vos propres commentaires.' }
+  if (error) {
+    if (error.message.includes('only delete your own')) {
+      return { error: 'Vous ne pouvez supprimer que vos propres commentaires.' }
+    }
+    return { error: error.message }
   }
 
-  // Delete likes first
-  await supabase
-    .from('comment_likes')
-    .delete()
-    .eq('comment_id', commentId)
-
-  // Delete comment
-  const { error } = await supabase
-    .from('comments')
-    .delete()
-    .eq('id', commentId)
-
-  return { error: error?.message ?? null }
+  return { error: null }
 }

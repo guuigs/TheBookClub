@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Heart } from "lucide-react";
 import { Button, useToast } from "@/components/ui";
 import { toggleFavorite } from "@/lib/db/favorites";
+import { useAuth } from "@/context/AuthContext";
 
 export interface FavoriteButtonProps {
   bookId: string;
@@ -19,8 +20,9 @@ export function FavoriteButton({
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
+  const { requireAuth } = useAuth();
 
-  const handleToggle = async () => {
+  const performToggle = async () => {
     setIsLoading(true);
 
     const result = await toggleFavorite(bookId);
@@ -38,6 +40,10 @@ export function FavoriteButton({
     }
 
     setIsLoading(false);
+  };
+
+  const handleToggle = () => {
+    requireAuth(performToggle);
   };
 
   return (

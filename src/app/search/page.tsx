@@ -107,7 +107,7 @@ function SearchContent() {
         supabase.from("books_with_stats").select("*"),
         supabase.from("book_lists").select(
           `id, title, description, author_id, created_at, updated_at,
-           author:profiles(id, username, display_name, avatar_url, badge),
+           author:profiles!book_lists_author_id_fkey(id, username, display_name, avatar_url, badge),
            items:book_list_items(book:books(id, title, cover_url, author_id)),
            likes_count:list_likes(count),
            books_count:book_list_items(count)`

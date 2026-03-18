@@ -21,3 +21,7 @@ export { Pagination } from "./Pagination";
 export type { PaginationProps } from "./Pagination";
 
 export { ToastProvider, useToast } from "./Toast";
+
+export { AuthRequiredModal } from "./AuthRequiredModal";
+
+export { CookieConsent } from "./CookieConsent";

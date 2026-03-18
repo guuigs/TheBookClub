@@ -61,29 +61,54 @@ export default function Home() {
     }
 
     // Recent comments with book info
-    const { data: commentsData } = await supabase
+    // Use explicit FK names to avoid "multiple relationships" error
+    const { data: commentsData, error: commentsError } = await supabase
       .from("comments")
       .select(
-        `*, user:profiles(id, username, display_name, avatar_url, badge),
-         book:books(id, title, cover_url),
+        `*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge),
+         book:books!comments_book_id_fkey(id, title, cover_url),
          likes_count:comment_likes(count)`
       )
       .order("created_at", { ascending: false })
       .limit(6);
-    if (commentsData) setRecentComments(commentsData.map(mapCommentWithBook));
+    if (commentsError) {
+      console.error("[Homepage] Comments fetch error:", commentsError.message);
+    } else if (commentsData) {
+      // Check which comments are liked by current user
+      let likedCommentIds = new Set<string>();
+      if (user) {
+        const { data: likesData } = await supabase
+          .from("comment_likes")
+          .select("comment_id")
+          .eq("user_id", user.id)
+          .in("comment_id", commentsData.map(c => c.id));
+        if (likesData) {
+          likedCommentIds = new Set(likesData.map(l => l.comment_id));
+        }
+      }
+      const mapped = commentsData.map(mapCommentWithBook);
+      // Enrich with isLikedByCurrentUser
+      mapped.forEach(item => {
+        item.comment.isLikedByCurrentUser = likedCommentIds.has(item.comment.id);
+      });
+      setRecentComments(mapped);
+    }
 
     // Popular lists
-    const { data: listsData } = await supabase
+    // Use explicit FK names to avoid "multiple relationships" error
+    const { data: listsData, error: listsError } = await supabase
       .from("book_lists")
       .select(
         `id, title, description, author_id, created_at, updated_at,
-         author:profiles(id, username, display_name, avatar_url, badge),
+         author:profiles!book_lists_author_id_fkey(id, username, display_name, avatar_url, badge),
          items:book_list_items(book:books(id, title, cover_url, author_id)),
          likes_count:list_likes(count),
          books_count:book_list_items(count)`
       )
       .limit(4);
-    if (listsData) {
+    if (listsError) {
+      console.error("[Homepage] Lists fetch error:", listsError.message);
+    } else if (listsData) {
       const sorted = listsData
         .map(mapList)
         .sort((a, b) => b.likesCount - a.likesCount);

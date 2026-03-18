@@ -58,19 +58,18 @@ export async function getRatingDistribution(
 ): Promise<number[]> {
   const supabase = createBrowserClient()
 
+  // Use secure RPC function that bypasses RLS for aggregation
   const { data } = await supabase
-    .from('ratings')
-    .select('score')
-    .eq('book_id', bookId)
+    .rpc('get_book_rating_distribution', { book_uuid: bookId })
 
   // Initialize array with 10 zeros (index 0 = score 1, index 9 = score 10)
   const distribution = Array(10).fill(0)
 
   if (data) {
-    data.forEach((rating) => {
-      const index = rating.score - 1 // score 1 goes to index 0, etc.
+    data.forEach((row: { score: number; vote_count: number }) => {
+      const index = row.score - 1 // score 1 goes to index 0, etc.
       if (index >= 0 && index < 10) {
-        distribution[index]++
+        distribution[index] = Number(row.vote_count)
       }
     })
   }

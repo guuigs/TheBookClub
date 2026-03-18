@@ -17,7 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/browser";
 import { upsertRating, getUserRating, getRatingDistribution } from "@/lib/db/ratings";
 import { createComment } from "@/lib/db/comments";
-import { getBookStatus, type BookStatus } from "@/lib/db/books";
+import { useAuth } from "@/context/AuthContext";
 import type { Book, Comment, MemberBadge, User } from "@/types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,6 +73,7 @@ export default function BookPage({
 }) {
   const { id } = use(params);
   const toast = useToast();
+  const { requireAuth } = useAuth();
 
   const [book, setBook] = useState<Book | null>(null);
   const [bookNotFound, setBookNotFound] = useState(false);
@@ -85,7 +86,6 @@ export default function BookPage({
   const [myRating, setMyRating] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [bookStatus, setBookStatus] = useState<BookStatus>(null);
   const [ratingDistribution, setRatingDistribution] = useState<number[]>(Array(10).fill(0));
   const [friendsRatings, setFriendsRatings] = useState<{ user: User; rating: number }[]>([]);
   const [friendsComments, setFriendsComments] = useState<Comment[]>([]);
@@ -136,7 +136,7 @@ export default function BookPage({
     supabase
       .from("comments")
       .select(
-        `*, user:profiles(id, username, display_name, avatar_url, badge),
+        `*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge),
          likes_count:comment_likes(count)`
       )
       .eq("book_id", id)
@@ -147,7 +147,6 @@ export default function BookPage({
       });
 
     getUserRating(id).then(setMyRating);
-    getBookStatus(id).then(setBookStatus);
     getRatingDistribution(id).then(setRatingDistribution);
 
     // Fetch friends' ratings and comments for this book
@@ -168,7 +167,7 @@ export default function BookPage({
       // Get friends' ratings for this book
       const { data: friendsRatingsData } = await supabase
         .from("ratings")
-        .select(`score, user:profiles(id, username, display_name, avatar_url, badge)`)
+        .select(`score, user:profiles!ratings_user_id_fkey(id, username, display_name, avatar_url, badge)`)
         .eq("book_id", id)
         .in("user_id", friendIds)
         .limit(4);
@@ -195,7 +194,7 @@ export default function BookPage({
       // Get friends' comments for this book
       const { data: friendsCommentsData } = await supabase
         .from("comments")
-        .select(`*, user:profiles(id, username, display_name, avatar_url, badge), likes_count:comment_likes(count)`)
+        .select(`*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge), likes_count:comment_likes(count)`)
         .eq("book_id", id)
         .in("user_id", friendIds)
         .order("created_at", { ascending: false })
@@ -209,7 +208,7 @@ export default function BookPage({
     fetchFriendsData();
   }, [id]);
 
-  const handleRatingChange = async (rating: number) => {
+  const performRatingChange = async (rating: number) => {
     setMyRating(rating);
     await upsertRating(id, rating);
     toast.success(`Note de ${rating}/10 enregistree`);
@@ -228,6 +227,14 @@ export default function BookPage({
     }
     // Refresh rating distribution
     getRatingDistribution(id).then(setRatingDistribution);
+  };
+
+  const handleRatingChange = (rating: number) => {
+    requireAuth(() => performRatingChange(rating));
+  };
+
+  const handleOpenCommentModal = () => {
+    requireAuth(() => setShowCommentModal(true));
   };
 
   const handleSubmitComment = async () => {
@@ -338,8 +345,8 @@ export default function BookPage({
             </section>
 
             <section className="flex flex-wrap items-center gap-3 md:gap-4">
-              <BookStatusButton bookId={id} initialStatus={bookStatus} />
-              <Button variant="primary" size="md" onClick={() => setShowCommentModal(true)}>
+              <BookStatusButton bookId={id} />
+              <Button variant="primary" size="md" onClick={handleOpenCommentModal}>
                 Commenter
               </Button>
               <Button variant="secondary" size="md" onClick={() => setShowShareModal(true)}>

@@ -8,7 +8,12 @@ export interface RatingStarsProps {
   maxRating?: number;
   size?: "sm" | "md" | "lg";
   interactive?: boolean;
-  variant?: "default" | "light";
+  /** Color variant:
+   * - default: gray empty, primary filled
+   * - light: white/40 empty, white filled
+   * - personal: white/40 empty, primary (orange) filled
+   */
+  variant?: "default" | "light" | "personal";
   onRatingChange?: (rating: number) => void;
   className?: string;
 }
@@ -37,7 +42,7 @@ export function RatingStars({
   const filledStars = displayRating / starValue;
 
   // Color variants
-  const emptyColor = variant === "light" ? "text-white/40 stroke-white/40" : "text-gray stroke-gray";
+  const emptyColor = variant === "default" ? "text-gray stroke-gray" : "text-white/40 stroke-white/40";
   const filledColor = variant === "light" ? "text-white fill-white" : "text-primary fill-primary";
 
   const handleClick = (starIndex: number) => {

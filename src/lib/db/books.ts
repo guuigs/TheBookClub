@@ -70,7 +70,7 @@ export async function getListsContainingBook(bookId: string) {
     .from('book_list_items')
     .select(
       `list_id, book_lists(id, title, description, author_id, created_at, updated_at,
-        author:profiles(id, username, display_name, avatar_url, badge),
+        author:profiles!book_lists_author_id_fkey(id, username, display_name, avatar_url, badge),
         items:book_list_items(book_id)
       )`
     )

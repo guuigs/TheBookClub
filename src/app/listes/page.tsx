@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Plus, Heart } from "lucide-react";
+import { Plus as PlusIcon, Minus, Heart } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { ListCard } from "@/components/features";
 import { Button } from "@/components/ui";
@@ -18,12 +18,13 @@ type ListFilter = "all" | "mine" | "favorites";
 const filterLabels: Record<ListFilter, string> = {
   all: "Toutes",
   mine: "Mes listes",
-  favorites: "Coups de coeur",
+  favorites: "Listes suivies",
 };
 
+// Use explicit FK names to avoid "multiple relationships" error
 const LIST_SELECT = `
   id, title, description, author_id, created_at, updated_at,
-  author:profiles(id, username, display_name, avatar_url, badge),
+  author:profiles!book_lists_author_id_fkey(id, username, display_name, avatar_url, badge),
   items:book_list_items(book:books(id, title, cover_url, author_id)),
   likes_count:list_likes(count),
   books_count:book_list_items(count)
@@ -32,6 +33,7 @@ const LIST_SELECT = `
 function ListsContent() {
   const { user } = useAuth();
   const [lists, setLists] = useState<BookList[]>([]);
+  const [likedListIds, setLikedListIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [activeFilter, setActiveFilter] = useState<ListFilter>("all");
@@ -42,18 +44,40 @@ function ListsContent() {
       .from("book_lists")
       .select(LIST_SELECT)
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) setLists(data.map(mapList));
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[ListsPage] Fetch error:", error.message);
+        } else if (data) {
+          setLists(data.map(mapList));
+        }
       });
   }, []);
+
+  // Fetch user's liked lists
+  useEffect(() => {
+    if (!user) {
+      setLikedListIds(new Set());
+      return;
+    }
+    const supabase = createClient();
+    supabase
+      .from("list_likes")
+      .select("list_id")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        if (data) {
+          setLikedListIds(new Set(data.map(l => l.list_id)));
+        }
+      });
+  }, [user]);
 
   const sortedLists = useMemo(() => {
     let filtered = [...lists];
 
     if (activeFilter === "mine" && user) {
       filtered = filtered.filter((l) => l.author.id === user.id);
-    } else if (activeFilter === "favorites") {
-      filtered = filtered.filter((l) => l.likesCount > 500);
+    } else if (activeFilter === "favorites" && user) {
+      filtered = filtered.filter((l) => likedListIds.has(l.id));
     }
 
     return filtered.sort((a, b) => {
@@ -68,7 +92,7 @@ function ListsContent() {
       }
       return sortDirection === "desc" ? comparison : -comparison;
     });
-  }, [lists, sortBy, sortDirection, activeFilter, user]);
+  }, [lists, sortBy, sortDirection, activeFilter, user, likedListIds]);
 
   const handleSortChange = (newSort: SortOption) => {
     if (newSort === sortBy) {
@@ -127,9 +151,9 @@ function ListsContent() {
               {option.label}
               {sortBy === option.value &&
                 (sortDirection === "desc" ? (
-                  <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                  <PlusIcon className="w-3.5 h-3.5" aria-hidden="true" />
                 ) : (
-                  <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                  <Minus className="w-3.5 h-3.5" aria-hidden="true" />
                 ))}
             </button>
           ))}
@@ -138,7 +162,7 @@ function ListsContent() {
 
           <Link href="/listes/create">
             <Button variant="primary" size="sm">
-              <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+              <PlusIcon className="w-4 h-4 mr-1" aria-hidden="true" />
               Créer une liste
             </Button>
           </Link>
@@ -156,7 +180,7 @@ function ListsContent() {
             {activeFilter === "mine" && (
               <Link href="/listes/create">
                 <Button variant="primary" size="sm">
-                  <Plus className="w-4 h-4 mr-1" aria-hidden="true" />
+                  <PlusIcon className="w-4 h-4 mr-1" aria-hidden="true" />
                   Créer ma première liste
                 </Button>
               </Link>

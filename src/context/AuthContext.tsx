@@ -27,6 +27,7 @@ interface AuthContextValue {
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signInWithGoogle: () => Promise<{ error: string | null }>
   signUp: (
     email: string,
     password: string,
@@ -35,6 +36,13 @@ interface AuthContextValue {
   ) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
+  requireAuth: (callback: () => void) => void
+}
+
+// Global state for auth modal
+let showAuthModalCallback: (() => void) | null = null
+export function setAuthModalCallback(cb: () => void) {
+  showAuthModalCallback = cb
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -104,6 +112,25 @@ export function AuthProvider({
     return { error: null }
   }
 
+  const signInWithGoogle = async (): Promise<{ error: string | null }> => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+    if (error) return { error: error.message }
+    return { error: null }
+  }
+
+  const requireAuth = (callback: () => void) => {
+    if (user) {
+      callback()
+    } else if (showAuthModalCallback) {
+      showAuthModalCallback()
+    }
+  }
+
   const signUp = async (
     email: string,
     password: string,
@@ -136,7 +163,7 @@ export function AuthProvider({
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, session, loading, signIn, signUp, signOut, refreshProfile }}
+      value={{ user, profile, session, loading, signIn, signInWithGoogle, signUp, signOut, refreshProfile, requireAuth }}
     >
       {children}
     </AuthContext.Provider>
