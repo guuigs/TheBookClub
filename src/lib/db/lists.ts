@@ -252,6 +252,17 @@ export async function toggleListLike(
   } = await supabase.auth.getUser()
   if (!user) return { liked: false, error: 'Non connecté.' }
 
+  // Check if user is trying to like their own list
+  const { data: list } = await supabase
+    .from('book_lists')
+    .select('author_id')
+    .eq('id', listId)
+    .single()
+
+  if (list?.author_id === user.id) {
+    return { liked: false, error: 'Vous ne pouvez pas aimer votre propre liste.' }
+  }
+
   const { data: existing } = await supabase
     .from('list_likes')
     .select('list_id')

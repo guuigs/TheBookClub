@@ -31,7 +31,8 @@
       "Bash(npm list:*)",
       "Bash(pip3 install:*)",
       "Bash(python3:*)",
-      "Bash(python scripts/import_books.py)"
+      "Bash(python scripts/import_books.py)",
+      "Bash(npx tsx:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

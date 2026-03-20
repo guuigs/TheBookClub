@@ -10,6 +10,54 @@ function toHdCover(url: string | null): string | null {
     .concat('&fife=w600')
 }
 
+// Strip HTML tags and decode common HTML entities
+function stripHtmlTags(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Levenshtein distance for author name similarity
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = []
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i]
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j
+  }
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        )
+      }
+    }
+  }
+  return matrix[b.length][a.length]
+}
+
+function nameSimilarity(a: string, b: string): number {
+  const maxLen = Math.max(a.length, b.length)
+  if (maxLen === 0) return 1
+  return 1 - levenshteinDistance(a.toLowerCase(), b.toLowerCase()) / maxLen
+}
+
+// Pattern to detect "4ème de couverture" and variants
+const quatriemeCouverturePattern = /4[eè]?me?\s*(?:de\s+)?couverture|quatri[eè]me\s+(?:de\s+)?couverture/i
+
 export async function POST(request: NextRequest) {
   const { volumeId } = await request.json()
 
@@ -30,21 +78,55 @@ export async function POST(request: NextRequest) {
   // Google Books returns authors as an array — keep them separate
   const authorsRaw: string[] = volumeInfo.authors ?? []
   const genre: string | null = volumeInfo.categories?.join(', ') ?? null
-  const description: string | null = volumeInfo.description ?? null
+  const rawDescription: string | null = volumeInfo.description ?? null
   const rawCoverUrl: string | null =
     volumeInfo.imageLinks?.thumbnail ?? volumeInfo.imageLinks?.smallThumbnail ?? null
   const coverUrl = toHdCover(rawCoverUrl)
 
+  // Validation 1: Cover required
+  if (!coverUrl) {
+    return NextResponse.json(
+      { error: "Ce livre n'a pas de couverture disponible." },
+      { status: 400 }
+    )
+  }
+
+  // Clean description from HTML tags
+  const description = rawDescription ? stripHtmlTags(rawDescription) : null
+
+  // Validation 2: Synopsis must be at least 100 characters
+  if (!description || description.length < 100) {
+    return NextResponse.json(
+      { error: 'Le synopsis de ce livre est trop court ou absent (minimum 100 caractères).' },
+      { status: 400 }
+    )
+  }
+
+  // Validation 3: Reject if synopsis contains "4ème de couverture" variants
+  if (quatriemeCouverturePattern.test(description)) {
+    return NextResponse.json(
+      { error: 'Le synopsis contient une mention de "4ème de couverture" et ne peut pas être ajouté.' },
+      { status: 400 }
+    )
+  }
+
   const accessInfo = item.accessInfo ?? {}
   const saleInfo = item.saleInfo ?? {}
-  const freeReadLink: string | null = accessInfo.webReaderLink ?? null
+  const rawFreeReadLink: string | null = accessInfo.webReaderLink ?? null
+
+  // Validation 7: Reject Google Play links for free reading
+  const freeReadLink = rawFreeReadLink && !rawFreeReadLink.includes('play.google.com')
+    ? rawFreeReadLink
+    : null
+
   const buyLink: string | null =
     saleInfo.saleability === 'FOR_SALE' ? (saleInfo.buyLink ?? null) : null
 
   const supabase = await createClient()
 
-  // Helper: upsert a single author by name, return their id
+  // Helper: upsert a single author by name with 80% similarity matching
   async function upsertAuthor(name: string): Promise<string | null> {
+    // 1. First check exact match (case-insensitive)
     const { data: existing } = await supabase
       .from('authors')
       .select('id')
@@ -52,6 +134,21 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
     if (existing) return existing.id
 
+    // 2. Check for similar authors (80% similarity threshold)
+    const { data: allAuthors } = await supabase
+      .from('authors')
+      .select('id, name')
+
+    if (allAuthors) {
+      for (const author of allAuthors) {
+        if (nameSimilarity(name, author.name) >= 0.8) {
+          // Merge under the existing author
+          return author.id
+        }
+      }
+    }
+
+    // 3. Create new author if no match found
     const { data: created, error } = await supabase
       .from('authors')
       .insert({ name })

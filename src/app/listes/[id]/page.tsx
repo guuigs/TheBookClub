@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Avatar, Badge } from "@/components/ui";
-import { BookCard, ListActions } from "@/components/features";
+import { ListActions, ListBooksGrid } from "@/components/features";
 import { getListById } from "@/lib/db/lists";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,7 +27,7 @@ export default async function ListDetailPage({
 
   // Check if current user has liked this list and get user ratings
   let isLiked = false;
-  let userRatings = new Map<string, number>();
+  const userRatingsObj: Record<string, number> = {};
   if (user) {
     const { data: likeData } = await supabase
       .from("list_likes")
@@ -46,7 +46,9 @@ export default async function ListDetailPage({
         .eq("user_id", user.id)
         .in("book_id", bookIds);
       if (ratingsData) {
-        userRatings = new Map(ratingsData.map(r => [r.book_id, r.score]));
+        ratingsData.forEach(r => {
+          userRatingsObj[r.book_id] = r.score;
+        });
       }
     }
   }
@@ -61,7 +63,7 @@ export default async function ListDetailPage({
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main className="flex-1 w-full max-w-[1500px] mx-auto px-5 py-10 lg:py-[80px]">
+      <main className="flex-1 w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto py-10 desktop:py-[80px]">
         <div className="flex flex-col gap-6 mb-10">
           <h1 className="font-display text-t1 text-dark tracking-tight">
             {list.title}
@@ -108,16 +110,7 @@ export default async function ListDetailPage({
         <div className="w-full h-px bg-gray/20 mb-10" />
 
         <section>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-            {list.books.map((book) => (
-              <BookCard key={book.id} book={book} size="md" showTitle showAuthor myRating={userRatings.get(book.id) ?? null} />
-            ))}
-          </div>
-          {list.books.length === 0 && (
-            <p className="text-body text-gray text-center py-10">
-              Cette liste ne contient pas encore de livres.
-            </p>
-          )}
+          <ListBooksGrid books={list.books} userRatings={userRatingsObj} />
         </section>
       </main>
 

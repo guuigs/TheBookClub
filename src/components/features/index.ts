@@ -60,3 +60,5 @@ export type { ProfileCardWithRatingProps } from "./ProfileCardWithRating";
 
 export { AddBookModal } from "./AddBookModal";
 export type { AddBookModalProps } from "./AddBookModal";
+
+export { ListBooksGrid } from "./ListBooksGrid";
