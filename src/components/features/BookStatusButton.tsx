@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 export interface BookStatusButtonProps {
   bookId: string;
   initialStatus?: "to_read" | "read" | null;
+  className?: string;
 }
 
 interface UserList {
@@ -20,6 +21,7 @@ interface UserList {
 
 export function BookStatusButton({
   bookId,
+  className = "",
 }: BookStatusButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -110,12 +112,12 @@ export function BookStatusButton({
   const isInPinnedList = pinnedList?.hasBook ?? false;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${className}`} ref={dropdownRef}>
       <Button
         variant={isInAnyList ? "secondary" : "primary"}
         onClick={handleToggleDropdown}
         disabled={isLoading}
-        className={isInPinnedList ? "bg-amber-50 text-amber-600 border-current" : ""}
+        className={`w-full ${isInPinnedList ? "bg-amber-50 text-amber-600 border-current" : ""}`}
       >
         {isLoading ? (
           <Loader2 className="w-5 h-5 mr-2 animate-spin" />

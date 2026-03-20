@@ -57,3 +57,6 @@ export { ProfileListsFilter } from "./ProfileListsFilter";
 
 export { ProfileCardWithRating } from "./ProfileCardWithRating";
 export type { ProfileCardWithRatingProps } from "./ProfileCardWithRating";
+
+export { AddBookModal } from "./AddBookModal";
+export type { AddBookModalProps } from "./AddBookModal";

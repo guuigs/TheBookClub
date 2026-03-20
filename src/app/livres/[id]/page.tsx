@@ -34,11 +34,12 @@ function mapBook(row: any): Book {
     },
     coverUrl: row.cover_url ?? "",
     description: row.description ?? "",
-    publishedYear: row.published_year ?? 0,
     genre: row.genre ?? "",
     averageRating: Number(row.average_rating ?? 0),
     totalVotes: Number(row.total_votes ?? 0),
     ratingDistribution: [],
+    freeReadLink: row.free_read_link ?? undefined,
+    buyLink: row.buy_link ?? undefined,
   };
 }
 
@@ -278,57 +279,95 @@ export default function BookPage({
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main className="flex-1 w-full px-5 py-10 lg:py-[120px]">
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-20 max-w-[1100px] mx-auto">
-          {/* Left Sidebar */}
-          <aside className="lg:sticky lg:top-[80px] lg:self-start flex flex-col gap-10 w-full lg:w-[220px] shrink-0 order-2 lg:order-1">
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <p className="text-[10px] font-semibold text-gray tracking-widest uppercase">Ma note</p>
-                <InteractiveStarRating
-                  value={myRating}
-                  onChange={handleRatingChange}
-                  size="md"
-                />
-              </div>
-              <div className="w-full h-px bg-gray/20" />
-              <div className="flex flex-col gap-2">
-                <p className="text-[10px] font-semibold text-gray tracking-widest uppercase">Moyenne publique</p>
-                <RatingBlock
-                  averageRating={book.averageRating}
-                  totalVotes={book.totalVotes}
-                  ratingDistribution={ratingDistribution}
-                />
-              </div>
-            </div>
+      <main className="flex-1 py-10 desktop:py-[120px]">
+        <div className="w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto">
 
-            <div className="relative w-[220px] h-[330px] bg-cream overflow-hidden mx-auto lg:mx-0">
-              {book.coverUrl ? (
-                <Image
-                  src={book.coverUrl}
-                  alt={`Couverture de ${book.title}`}
-                  fill
-                  className="object-cover"
-                  sizes="220px"
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cream to-gray/20">
-                  <p className="font-display text-lg text-dark text-center px-4 leading-tight">
-                    {book.title}
-                  </p>
-                </div>
-              )}
-            </div>
-          </aside>
+          {/* Mobile & Tablet layout: stacked. Desktop: sidebar + main */}
+          <div className="flex flex-col desktop:flex-row gap-10 desktop:gap-20">
 
-          {/* Main Content */}
-          <div className="flex flex-col gap-[60px] flex-1 order-1 lg:order-2">
-            <section className="flex flex-col gap-6">
-              <h1 className="font-display text-t2 md:text-t1 text-dark tracking-tight">
+            {/* ═══ SIDEBAR ═══ */}
+            <aside className="flex flex-col items-center desktop:items-start desktop:sticky desktop:top-[80px] desktop:self-start desktop:w-[220px] desktop:shrink-0 gap-6">
+
+              {/* Cover — order 1 everywhere */}
+              <div className="order-1 relative w-[180px] tablet:w-[200px] desktop:w-[220px] aspect-[2/3] bg-cream overflow-hidden">
+                {book.coverUrl ? (
+                  <Image
+                    src={book.coverUrl}
+                    alt={`Couverture de ${book.title}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 699px) 180px, (max-width: 1199px) 200px, 220px"
+                    priority
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cream to-gray/20">
+                    <p className="font-display text-lg text-dark text-center px-4 leading-tight">
+                      {book.title}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Title — order 2 on mobile/tablet, hidden on desktop (shown in main) */}
+              <h1 className="order-2 desktop:hidden font-display text-t2 text-dark tracking-tight text-center">
                 {book.title}
               </h1>
-              <div className="flex flex-col gap-2 items-start">
+
+              {/* Ratings — order 3 on mobile, order 1 on desktop */}
+              <div className="order-3 desktop:order-1 w-full flex flex-col items-center desktop:items-start gap-5">
+                <div className="flex flex-col items-center desktop:items-start gap-2">
+                  <p className="text-[10px] font-semibold text-gray tracking-widest uppercase">Ma note</p>
+                  <InteractiveStarRating
+                    value={myRating}
+                    onChange={handleRatingChange}
+                    size="md"
+                  />
+                </div>
+                <div className="w-full h-px bg-gray/20" />
+                <div className="flex flex-col items-center desktop:items-start gap-2 w-full">
+                  <p className="text-[10px] font-semibold text-gray tracking-widest uppercase">Moyenne publique</p>
+                  {/* Mobile/tablet: simplified centered display */}
+                  <div className="desktop:hidden flex flex-col items-center gap-1">
+                    <p className="text-t3 font-semibold text-dark tracking-tight">
+                      {book.averageRating > 0 ? `${book.averageRating}/10` : "—"}
+                    </p>
+                    <p className="text-small font-medium text-primary">
+                      {book.totalVotes} votant{book.totalVotes !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  {/* Desktop: full histogram block */}
+                  <div className="hidden desktop:block w-full">
+                    <RatingBlock
+                      averageRating={book.averageRating}
+                      totalVotes={book.totalVotes}
+                      ratingDistribution={ratingDistribution}
+                    />
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* ═══ MAIN CONTENT ═══ */}
+            <div className="flex flex-col gap-10 desktop:gap-[60px] flex-1">
+
+              {/* Title — desktop only (shown in aside on mobile/tablet) */}
+              <h1 className="hidden desktop:block font-display text-t1 text-dark tracking-tight">
+                {book.title}
+              </h1>
+
+              {/* Action buttons — stacked full-width on mobile, row on tablet+ */}
+              <section className="flex flex-col tablet:flex-row tablet:flex-wrap gap-3">
+                <BookStatusButton bookId={id} className="w-full tablet:w-auto" />
+                <Button variant="primary" size="md" onClick={handleOpenCommentModal} className="w-full tablet:w-auto">
+                  Commenter
+                </Button>
+                <Button variant="secondary" size="md" onClick={() => setShowShareModal(true)} className="w-full tablet:w-auto">
+                  Partager
+                </Button>
+              </section>
+
+              {/* Synopsis */}
+              <section className="flex flex-col gap-2 items-start">
                 <p className="text-body font-medium text-dark tracking-tight leading-relaxed">
                   {displayedSynopsis}
                 </p>
@@ -341,153 +380,162 @@ export default function BookPage({
                     {isSynopsisExpanded ? "voir moins" : "voir plus"}
                   </Button>
                 )}
-              </div>
-            </section>
+              </section>
 
-            <section className="flex flex-wrap items-center gap-3 md:gap-4">
-              <BookStatusButton bookId={id} />
-              <Button variant="primary" size="md" onClick={handleOpenCommentModal}>
-                Commenter
-              </Button>
-              <Button variant="secondary" size="md" onClick={() => setShowShareModal(true)}>
-                Partager
-              </Button>
-            </section>
-
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-[70px]">
-              <div className="flex flex-col gap-7">
-                <div className="flex flex-col gap-1 items-start">
-                  <span className="text-body font-medium text-gray tracking-tight">Auteur</span>
-                  <Link href={`/auteur/${book.author.id}`} className="text-body font-medium text-dark tracking-tight hover:text-primary transition-colors">
-                    {book.author.name}
-                  </Link>
-                </div>
-                <div className="flex flex-col gap-1 items-start">
-                  <span className="text-body font-medium text-gray tracking-tight">Date de parution</span>
-                  <span className="text-body font-medium text-dark tracking-tight">{book.publishedYear}</span>
-                </div>
-                <div className="flex flex-col gap-1 items-start">
-                  <span className="text-body font-medium text-gray tracking-tight">Genre</span>
-                  <span className="text-body font-medium text-dark tracking-tight">{book.genre}</span>
-                </div>
-              </div>
-
-              {/* External links section - hidden until real data is available
-              <div className="flex flex-col gap-7">
-                <div className="flex flex-col gap-3 items-start">
-                  <span className="text-body font-medium text-gray tracking-tight">Lecture en ligne gratuite</span>
-                  <div className="flex flex-col gap-2 items-start">
-                    <Button variant="discrete" size="sm">pdf 1</Button>
+              {/* Metadata */}
+              <section className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-8">
+                {/* Col 1 : Auteur + Genre */}
+                <div className="flex flex-col gap-7">
+                  <div className="flex flex-col gap-1 items-start">
+                    <span className="text-body font-medium text-gray tracking-tight">Auteur</span>
+                    <Link href={`/auteur/${book.author.id}`} className="text-body font-medium text-dark tracking-tight hover:text-primary transition-colors">
+                      {book.author.name}
+                    </Link>
+                  </div>
+                  <div className="flex flex-col gap-1 items-start">
+                    <span className="text-body font-medium text-gray tracking-tight">Genre</span>
+                    <span className="text-body font-medium text-dark tracking-tight">{book.genre}</span>
                   </div>
                 </div>
-                <div className="flex flex-col gap-3 items-start">
-                  <span className="text-body font-medium text-gray tracking-tight">Acheter le livre</span>
-                  <Button variant="discrete" size="sm">lien 1</Button>
+
+                {/* Col 2 : Liens */}
+                <div className="flex flex-col gap-7">
+                  <div className="flex flex-col gap-3 items-start">
+                    <span className="text-body font-medium text-gray tracking-tight">Lecture en ligne gratuite</span>
+                    {book.freeReadLink ? (
+                      <a
+                        href={book.freeReadLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-body font-medium text-primary underline hover:opacity-80 transition-opacity"
+                      >
+                        Lire sur Google Books
+                      </a>
+                    ) : (
+                      <span className="text-body font-medium text-gray tracking-tight">Non disponible</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-3 items-start">
+                    <span className="text-body font-medium text-gray tracking-tight">Acheter en ligne</span>
+                    {book.buyLink ? (
+                      <a
+                        href={book.buyLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-body font-medium text-primary underline hover:opacity-80 transition-opacity"
+                      >
+                        Acheter sur Google Books
+                      </a>
+                    ) : (
+                      <span className="text-body font-medium text-gray tracking-tight">Non disponible</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              */}
 
-              <div className="flex flex-col gap-3 items-start">
-                <span className="text-body font-medium text-gray tracking-tight">Les librairies du club</span>
-                <p className="text-small font-medium text-gray tracking-tight leading-relaxed">
-                  Le Book Club est affilié à une série de librairies indépendantes partout en France.
-                  Achetez vos livres là-bas et profitez d&apos;une réduction de 5% à l&apos;achat.
-                </p>
-                <Link href="/librairies">
-                  <Button variant="discrete" size="sm">voir les librairies affiliées</Button>
-                </Link>
-              </div>
-            </section>
-
-            {authorBooks.length > 0 && (
-              <section className="flex flex-col gap-7">
-                <SectionHeader title="Du même auteur" seeMoreHref={`/auteur/${book.author.id}`} />
-                <div className="flex gap-5 overflow-x-auto pb-2">
-                  {authorBooks.map((relatedBook) => (
-                    <BookCard
-                      key={relatedBook.id}
-                      book={relatedBook}
-                      size="md"
-                      myRating={authorBooksRatings.get(relatedBook.id) ?? null}
-                    />
-                  ))}
+                {/* Col 3 : Librairies */}
+                <div className="flex flex-col gap-3 items-start">
+                  <span className="text-body font-medium text-gray tracking-tight">Les librairies du club</span>
+                  <p className="text-small font-medium text-gray tracking-tight leading-relaxed">
+                    Le Book Club est affilié à une série de librairies indépendantes partout en France.
+                    Achetez vos livres là-bas et profitez d&apos;une réduction de 5% à l&apos;achat.
+                  </p>
+                  <Link href="/librairies">
+                    <Button variant="discrete" size="sm">voir les librairies affiliées</Button>
+                  </Link>
                 </div>
               </section>
-            )}
 
-            {/* Notes de mes amis */}
-            <section className="flex flex-col gap-7">
-              <SectionHeader
-                title="Notes de mes amis"
-                seeMoreHref={`/livres/${id}/friends`}
-              />
-              {friendsRatings.length > 0 ? (
-                <div className="flex gap-5 overflow-x-auto pb-2">
-                  {friendsRatings.slice(0, 4).map((item) => (
-                    <ProfileCardWithRating
-                      key={item.user.id}
-                      user={item.user}
-                      rating={item.rating}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-body text-gray">
-                  Pas encore de note de mes amis.
-                </p>
+              {/* Du même auteur */}
+              {authorBooks.length > 0 && (
+                <section className="flex flex-col gap-7">
+                  <SectionHeader title="Du même auteur" seeMoreHref={`/auteur/${book.author.id}`} />
+                  <div className="flex gap-5 overflow-x-auto pb-2">
+                    {authorBooks.map((relatedBook) => (
+                      <BookCard
+                        key={relatedBook.id}
+                        book={relatedBook}
+                        size="md"
+                        myRating={authorBooksRatings.get(relatedBook.id) ?? null}
+                      />
+                    ))}
+                  </div>
+                </section>
               )}
-            </section>
 
-            {/* Critiques de mes amis */}
-            <section className="flex flex-col gap-7">
-              <SectionHeader
-                title="Critiques de mes amis"
-                seeMoreHref={`/livres/${id}/friends/comments`}
-              />
-              {friendsComments.length > 0 ? (
-                <div className="flex flex-col gap-5">
-                  {friendsComments.slice(0, 4).map((comment) => (
-                    <CommentCard
-                      key={comment.id}
-                      comment={comment}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-body text-gray">
-                  Pas encore de critique de mes amis.
-                </p>
-              )}
-            </section>
+              {/* Notes de mes amis */}
+              <section className="flex flex-col gap-7">
+                <SectionHeader
+                  title="Notes de mes amis"
+                  seeMoreHref={`/livres/${id}/friends`}
+                />
+                {friendsRatings.length > 0 ? (
+                  <div className="flex gap-5 overflow-x-auto pb-2">
+                    {friendsRatings.slice(0, 4).map((item) => (
+                      <ProfileCardWithRating
+                        key={item.user.id}
+                        user={item.user}
+                        rating={item.rating}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-body text-gray">
+                    Pas encore de note de mes amis.
+                  </p>
+                )}
+              </section>
 
-            {/* Critiques populaires */}
-            <section className="flex flex-col gap-7">
-              <SectionHeader title="Critiques populaires" seeMoreHref={`/livres/${id}/comments`} />
-              {comments.length > 0 ? (
-                <div className="flex flex-col gap-5">
-                  {comments.slice(0, 4).map((comment) => (
-                    <CommentCard
-                      key={comment.id}
-                      comment={comment}
-                      onDeleted={() => setComments(comments.filter(c => c.id !== comment.id))}
-                      onUpdated={(newContent) => setComments(comments.map(c => c.id === comment.id ? { ...c, content: newContent } : c))}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-body text-gray">
-                  Pas encore de critique.
-                </p>
-              )}
-            </section>
+              {/* Critiques de mes amis */}
+              <section className="flex flex-col gap-7">
+                <SectionHeader
+                  title="Critiques de mes amis"
+                  seeMoreHref={`/livres/${id}/friends/comments`}
+                />
+                {friendsComments.length > 0 ? (
+                  <div className="flex flex-col gap-5">
+                    {friendsComments.slice(0, 4).map((comment) => (
+                      <CommentCard
+                        key={comment.id}
+                        comment={comment}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-body text-gray">
+                    Pas encore de critique de mes amis.
+                  </p>
+                )}
+              </section>
 
-            <div className="pt-10 border-t border-gray/20">
-              <Link
-                href={`/formulaire-modification/${id}`}
-                className="text-small font-medium text-gray underline underline-offset-2 hover:text-dark transition-colors"
-              >
-                Suggérer une modification
-              </Link>
+              {/* Critiques populaires */}
+              <section className="flex flex-col gap-7">
+                <SectionHeader title="Critiques populaires" seeMoreHref={`/livres/${id}/comments`} />
+                {comments.length > 0 ? (
+                  <div className="flex flex-col gap-5">
+                    {comments.slice(0, 4).map((comment) => (
+                      <CommentCard
+                        key={comment.id}
+                        comment={comment}
+                        onDeleted={() => setComments(comments.filter(c => c.id !== comment.id))}
+                        onUpdated={(newContent) => setComments(comments.map(c => c.id === comment.id ? { ...c, content: newContent } : c))}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-body text-gray">
+                    Pas encore de critique.
+                  </p>
+                )}
+              </section>
+
+              <div className="pt-10 border-t border-gray/20">
+                <Link
+                  href={`/formulaire-modification/${id}`}
+                  className="text-small font-medium text-gray underline underline-offset-2 hover:text-dark transition-colors"
+                >
+                  Suggérer une modification
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -498,14 +546,14 @@ export default function BookPage({
       {/* Comment Modal */}
       {showCommentModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-5"
+          className="fixed inset-0 bg-black/50 flex items-end tablet:items-center justify-center z-50 p-0 tablet:p-5"
           onClick={() => setShowCommentModal(false)}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="comment-modal-title"
-            className="bg-white rounded-xl p-8 w-full max-w-[500px] flex flex-col gap-6"
+            className="bg-white rounded-t-2xl tablet:rounded-xl p-6 tablet:p-8 w-full tablet:max-w-[500px] flex flex-col gap-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="comment-modal-title" className="font-display text-t2 text-dark tracking-tight">Commenter</h2>
@@ -539,14 +587,14 @@ export default function BookPage({
       {/* Share Modal */}
       {showShareModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-5"
+          className="fixed inset-0 bg-black/50 flex items-end tablet:items-center justify-center z-50 p-0 tablet:p-5"
           onClick={() => setShowShareModal(false)}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="share-modal-title"
-            className="bg-white rounded-xl p-8 w-full max-w-[400px] flex flex-col gap-6"
+            className="bg-white rounded-t-2xl tablet:rounded-xl p-6 tablet:p-8 w-full tablet:max-w-[400px] flex flex-col gap-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="share-modal-title" className="font-display text-t2 text-dark tracking-tight">Partager</h2>

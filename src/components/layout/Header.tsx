@@ -51,7 +51,7 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white w-full z-50 border-b border-cream">
-      <div className="max-w-[1500px] mx-auto px-5 py-3">
+      <div className="w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto px-4 desktop:px-0 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="shrink-0">
@@ -69,7 +69,7 @@ export function Header() {
                 placeholder="Rechercher un livre..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-5 py-2 bg-gray/10 text-dark placeholder:text-gray border border-gray/20 rounded-lg text-body tracking-tight w-[280px] focus:outline-none focus:ring-2 focus:ring-primary"
+                className="pl-12 pr-5 py-2 bg-gray/10 text-dark placeholder:text-gray border border-gray/20 rounded-lg text-body tracking-tight w-[180px] desktop:w-[280px] focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </form>
 

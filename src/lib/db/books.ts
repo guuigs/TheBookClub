@@ -16,11 +16,12 @@ function mapBookRow(row: any): Book {
     },
     coverUrl: row.cover_url ?? '',
     description: row.description ?? '',
-    publishedYear: row.published_year ?? 0,
     genre: row.genre ?? '',
     averageRating: Number(row.average_rating ?? 0),
     totalVotes: Number(row.total_votes ?? 0),
     ratingDistribution: [],
+    freeReadLink: row.free_read_link ?? undefined,
+    buyLink: row.buy_link ?? undefined,
   }
 }
 

@@ -51,12 +51,14 @@ function mapListRow(row: any): BookList {
     likesCount,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at ?? row.created_at),
+    isPrivate: row.is_private ?? false,
+    isPinned: row.is_pinned ?? false,
   }
 }
 
 // Use explicit FK names to avoid "multiple relationships" error
 const LIST_SELECT = `
-  id, title, description, author_id, created_at, updated_at,
+  id, title, description, author_id, created_at, updated_at, is_private, is_pinned,
   author:profiles!book_lists_author_id_fkey(id, username, display_name, avatar_url, badge),
   items:book_list_items(book:books(id, title, cover_url, author_id)),
   likes_count:list_likes(count),
@@ -68,6 +70,7 @@ export async function getLists(client?: SupabaseClient): Promise<BookList[]> {
   const { data } = await supabase
     .from('book_lists')
     .select(LIST_SELECT)
+    .eq('is_private', false)
     .order('created_at', { ascending: false })
   return (data ?? []).map(mapListRow)
 }
@@ -197,6 +200,16 @@ export async function deleteList(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Vous devez être connecté.' }
+
+  // Prevent deleting the private "À lire" list
+  const { data: list } = await supabase
+    .from('book_lists')
+    .select('is_pinned')
+    .eq('id', listId)
+    .single()
+  if (list?.is_pinned) {
+    return { error: 'La liste "À lire" ne peut pas être supprimée.' }
+  }
 
   // Use secure RPC function that handles cascade deletion
   // This bypasses RLS to delete items and other users' likes
@@ -413,9 +426,10 @@ export async function ensureDefaultReadingList(): Promise<{ listId: string | nul
     .from('book_lists')
     .insert({
       title: 'À lire',
-      description: 'Ma liste de lecture',
+      description: 'Ma liste de lecture privée',
       author_id: user.id,
-      is_pinned: true
+      is_private: true,
+      is_pinned: true,
     })
     .select('id')
     .single()

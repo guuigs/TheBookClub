@@ -60,10 +60,10 @@ export function HomeCommentCard({
 
   return (
     <div className={`flex gap-4 w-full max-w-[540px] ${className}`}>
-      {/* Book Cover */}
+      {/* Book Cover — desktop only */}
       <Link
         href={`/livres/${book.id}`}
-        className="relative w-[100px] h-[150px] bg-cream shrink-0 overflow-hidden"
+        className="hidden desktop:block relative w-[100px] h-[150px] bg-cream shrink-0 overflow-hidden"
       >
         {book.coverUrl ? (
           <Image
@@ -99,7 +99,7 @@ export function HomeCommentCard({
           <div className="flex items-center">
             <Link
               href={`/account/${comment.user.id}`}
-              className="text-[16px] font-medium text-dark tracking-tight hover:text-primary transition-colors"
+              className="text-body font-medium text-dark tracking-tight hover:text-primary transition-colors"
             >
               {comment.user.username}
             </Link>
@@ -108,7 +108,7 @@ export function HomeCommentCard({
           {comment.rating && (
             <RatingStars rating={comment.rating} size="sm" />
           )}
-          <span className="text-[12px] text-gray tracking-tight">
+          <span className="text-small text-gray tracking-tight">
             noté le {formattedDate}
           </span>
         </div>
@@ -116,20 +116,20 @@ export function HomeCommentCard({
         {/* Book Title */}
         <Link
           href={`/livres/${book.id}`}
-          className="font-display text-[22px] text-dark hover:text-primary transition-colors"
+          className="font-display text-t4 text-dark hover:text-primary transition-colors"
         >
           {book.title}
         </Link>
 
         {/* Comment Text */}
-        <p className="text-[15px] font-medium text-dark tracking-tight leading-relaxed line-clamp-3">
+        <p className="text-body font-medium text-dark tracking-tight leading-relaxed line-clamp-3">
           {truncatedContent}
         </p>
 
         {isLong && (
           <Link
             href={`/livres/${book.id}`}
-            className="text-[14px] font-medium text-primary underline tracking-tight hover:opacity-80"
+            className="text-small font-medium text-primary underline tracking-tight hover:opacity-80"
           >
             voir plus
           </Link>
@@ -151,7 +151,7 @@ export function HomeCommentCard({
             }`}
             aria-hidden="true"
           />
-          <span className="text-[13px] font-medium text-dark group-hover:text-primary transition-colors">
+          <span className="text-small font-medium text-dark group-hover:text-primary transition-colors">
             {likesCount} like{likesCount !== 1 ? "s" : ""}
           </span>
         </button>

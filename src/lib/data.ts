@@ -129,7 +129,6 @@ export const books: Book[] = [
     description: `Les Liaisons dangereuses est un roman épistolaire de 175 lettres, écrit par Pierre Choderlos de Laclos et publié en 1782. Cette œuvre littéraire majeure du XVIIIe siècle, qui narre le duo pervers du vicomte de Valmont et de la marquise de Merteuil, manipulateurs experts dans l'art de la séduction et de l'intrigue.
 
 Le roman explore les thèmes de la manipulation, de la vengeance et de l'amour à travers les correspondances de ses personnages. Considéré comme un chef-d'œuvre de la littérature française, il a été adapté de nombreuses fois au théâtre et au cinéma.`,
-    publishedYear: 1782,
     genre: "Roman épistolaire",
     averageRating: 7,
     totalVotes: 153,
@@ -143,7 +142,6 @@ Le roman explore les thèmes de la manipulation, de la vengeance et de l'amour �
     description: `Notre-Dame de Paris est un roman de l'écrivain français Victor Hugo, publié en 1831. Le titre fait référence à la cathédrale Notre-Dame de Paris, qui est un des lieux principaux de l'intrigue du roman.
 
 L'histoire se déroule à Paris en 1482 et raconte l'amour du bossu Quasimodo pour la belle Esmeralda.`,
-    publishedYear: 1831,
     genre: "Roman historique",
     averageRating: 8.5,
     totalVotes: 2341,
@@ -157,7 +155,6 @@ L'histoire se déroule à Paris en 1482 et raconte l'amour du bossu Quasimodo po
     description: `Les Misérables est un roman de Victor Hugo publié en 1862. Ce roman, un des plus populaires de la littérature française, a donné lieu à de nombreuses adaptations au cinéma.
 
 Dans ce chef-d'œuvre, Hugo retrace la vie de plusieurs personnages dans la France du XIXe siècle, principalement Jean Valjean, ancien forçat.`,
-    publishedYear: 1862,
     genre: "Roman",
     averageRating: 9,
     totalVotes: 4521,
@@ -171,7 +168,6 @@ Dans ce chef-d'œuvre, Hugo retrace la vie de plusieurs personnages dans la Fran
     description: `Le Comte de Monte-Cristo est un roman d'Alexandre Dumas, écrit avec la collaboration d'Auguste Maquet et publié en 1844-1846.
 
 C'est l'histoire d'Edmond Dantès, un jeune marin accusé à tort de trahison, qui s'évade de prison et trouve un trésor.`,
-    publishedYear: 1844,
     genre: "Roman d'aventure",
     averageRating: 9.2,
     totalVotes: 3456,
@@ -185,7 +181,6 @@ C'est l'histoire d'Edmond Dantès, un jeune marin accusé à tort de trahison, q
     description: `Germinal est un roman d'Émile Zola publié en 1885. Ce treizième roman de la série des Rougon-Macquart est considéré comme le chef-d'œuvre de Zola.
 
 Le roman décrit les conditions de vie des mineurs du nord de la France au XIXe siècle.`,
-    publishedYear: 1885,
     genre: "Roman naturaliste",
     averageRating: 8.3,
     totalVotes: 1876,
@@ -199,7 +194,6 @@ Le roman décrit les conditions de vie des mineurs du nord de la France au XIXe 
     description: `Madame Bovary est un roman de Gustave Flaubert publié en 1857. L'histoire est celle d'Emma Bovary, une femme qui cherche à échapper à l'ennui de sa vie de province.
 
 Ce roman est considéré comme un des chefs-d'œuvre du réalisme français.`,
-    publishedYear: 1857,
     genre: "Roman",
     averageRating: 7.8,
     totalVotes: 2134,
@@ -213,7 +207,6 @@ Ce roman est considéré comme un des chefs-d'œuvre du réalisme français.`,
     description: `Les Trois Mousquetaires est un roman de cape et d'épée d'Alexandre Dumas, publié en 1844.
 
 L'histoire suit les aventures de d'Artagnan et de ses amis Athos, Porthos et Aramis.`,
-    publishedYear: 1844,
     genre: "Roman de cape et d'épée",
     averageRating: 8.7,
     totalVotes: 2876,
@@ -227,7 +220,6 @@ L'histoire suit les aventures de d'Artagnan et de ses amis Athos, Porthos et Ara
     description: `L'Éducation sentimentale est un roman de Gustave Flaubert publié en 1869.
 
 Ce roman retrace la vie de Frédéric Moreau, un jeune homme qui monte à Paris pour faire ses études.`,
-    publishedYear: 1869,
     genre: "Roman",
     averageRating: 7.2,
     totalVotes: 987,
@@ -394,7 +386,6 @@ export function getPopularBooks(limit: number = 8): Book[] {
 
 export function getRecentBooks(limit: number = 8): Book[] {
   return [...books]
-    .sort((a, b) => b.publishedYear - a.publishedYear)
     .slice(0, limit);
 }
 

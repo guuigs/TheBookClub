@@ -40,7 +40,6 @@ export default function BookCommentsPage({
             author: { id: "", name: "", booksCount: 0 },
             coverUrl: "",
             description: "",
-            publishedYear: 0,
             genre: "",
             averageRating: 0,
             totalVotes: 0,
@@ -118,7 +117,7 @@ export default function BookCommentsPage({
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main className="flex-1 w-full max-w-[800px] mx-auto px-5 py-10 lg:py-[80px]">
+      <main className="flex-1 w-[320px] tablet:w-[700px] desktop:w-[900px] mx-auto py-10 desktop:py-[80px]">
         <Link
           href={`/livres/${id}`}
           className="inline-flex items-center gap-2 text-body font-medium text-gray hover:text-primary transition-colors mb-8"
@@ -141,7 +140,7 @@ export default function BookCommentsPage({
               <button
                 key={option.value}
                 onClick={() => handleSortChange(option.value)}
-                className={`flex items-center gap-1 px-4 py-2 rounded-lg text-body font-medium tracking-tight transition-colors ${
+                className={`flex items-center gap-1 px-5 py-3 rounded-xl text-body font-medium tracking-tight transition-colors ${
                   sortBy === option.value
                     ? "bg-dark text-white"
                     : "bg-gray/10 text-dark hover:bg-gray/20"

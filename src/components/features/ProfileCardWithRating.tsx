@@ -37,7 +37,7 @@ export function ProfileCardWithRating({
       </div>
 
       {/* Username */}
-      <p className="font-display text-[18px] text-dark text-center tracking-tight group-hover:text-primary transition-colors line-clamp-1">
+      <p className="font-display text-body text-dark text-center tracking-tight group-hover:text-primary transition-colors line-clamp-1">
         {user.displayName || user.username}
       </p>
 

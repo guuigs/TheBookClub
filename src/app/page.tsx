@@ -161,19 +161,19 @@ export default function Home() {
           </div>
 
           <div className="relative h-full flex flex-col items-center justify-center text-white px-5">
-            <p className="font-display italic text-[20px] md:text-[24px] mb-6">
+            <p className="font-display italic text-body tablet:text-t4 mb-6">
               since 2026
             </p>
             <Image src="/images/logo.svg" alt="The Book Club" width={220} height={142} className="object-contain invert" priority />
-            <p className="font-display italic text-[18px] md:text-[24px] mt-6">
+            <p className="font-display italic text-body tablet:text-t4 mt-6">
               your books, your reviews
             </p>
           </div>
         </section>
 
-        <div className="flex flex-col items-center gap-[60px] md:gap-[80px] py-[40px] md:py-[60px]">
+        <div className="flex flex-col items-center gap-[60px] tablet:gap-[80px] py-[40px] tablet:py-[60px]">
           {/* Search Bar */}
-          <form onSubmit={handleSearch} className="w-full max-w-[550px] px-5">
+          <form onSubmit={handleSearch} className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
             <div className="relative">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray" aria-hidden="true" />
               <input
@@ -189,10 +189,10 @@ export default function Home() {
 
           {/* Popular Books */}
           {popularBooks.length > 0 && (
-            <section className="w-full max-w-[1100px] px-5 mx-auto">
+            <section className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
               <div className="flex flex-col gap-10">
                 <SectionHeader title="Livres populaires en ce moment" seeMoreHref="/livres" className="text-t3" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 justify-items-center">
+                <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-5 justify-items-center">
                   {popularBooks.map((book) => (
                     <BookCard key={book.id} book={book} size="lg" showTitle showAuthor myRating={userRatings.get(book.id) ?? null} />
                   ))}
@@ -202,11 +202,11 @@ export default function Home() {
           )}
 
           {/* Comments */}
-          <section className="w-full max-w-[1100px] px-5 mx-auto">
+          <section className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
             <div className="flex flex-col gap-10">
               <SectionHeader title="Les commentaires de la semaine" seeMoreHref="/comments" className="text-t3" />
               {recentComments.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 tablet:grid-cols-2 gap-5">
                   {recentComments.map(({ comment, book }) => (
                     <HomeCommentCard key={comment.id} comment={comment} book={book} />
                   ))}
@@ -218,11 +218,11 @@ export default function Home() {
           </section>
 
           {/* Popular Lists */}
-          <section className="w-full max-w-[1100px] px-5 mx-auto">
+          <section className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
             <div className="flex flex-col gap-10">
               <SectionHeader title="Listes populaires en ce moment" seeMoreHref="/listes" className="text-t3" />
               {popularLists.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 tablet:grid-cols-2 gap-5">
                   {popularLists.map((list) => (
                     <ListCard key={list.id} list={list} />
                   ))}
@@ -235,10 +235,10 @@ export default function Home() {
 
           {/* Members */}
           {featuredMembers.length > 0 && (
-            <section className="w-full max-w-[1100px] px-5 mx-auto">
+            <section className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
               <div className="flex flex-col gap-10">
                 <SectionHeader title="Les membres du club à suivre" seeMoreHref="/membres" className="text-t3" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 justify-items-center">
+                <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-5 justify-items-center">
                   {featuredMembers.map((member) => (
                     <MemberCard key={member.id} user={member} />
                   ))}

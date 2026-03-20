@@ -43,6 +43,7 @@ function ListsContent() {
     supabase
       .from("book_lists")
       .select(LIST_SELECT)
+      .eq("is_private", false)
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (error) {
@@ -114,7 +115,7 @@ function ListsContent() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main id="main-content" className="flex-1 w-full max-w-[1500px] mx-auto px-5 py-10 lg:py-[80px]">
+      <main id="main-content" className="flex-1 w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto py-10 desktop:py-[80px]">
         <h1 className="sr-only">Listes de lecture</h1>
 
         <div className="flex flex-wrap items-center gap-3 mb-10" role="toolbar" aria-label="Filtres et tri des listes">
@@ -168,7 +169,7 @@ function ListsContent() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" aria-live="polite">
+        <div className="grid grid-cols-1 tablet:grid-cols-2 gap-5" aria-live="polite">
           {sortedLists.map((list) => (
             <ListCard key={list.id} list={list} />
           ))}

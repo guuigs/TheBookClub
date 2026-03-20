@@ -22,11 +22,12 @@ export interface Book {
   author: Author;
   coverUrl: string;
   description: string;
-  publishedYear: number;
   genre: string;
   averageRating: number;
   totalVotes: number;
   ratingDistribution: number[]; // Array of 10 values (votes per rating 1-10)
+  freeReadLink?: string;
+  buyLink?: string;
 }
 
 // Author
@@ -75,6 +76,8 @@ export interface BookList {
   likesCount: number;
   createdAt: Date;
   updatedAt: Date;
+  isPrivate?: boolean;
+  isPinned?: boolean;
 }
 
 // User's Book Entry (in their library)

@@ -18,7 +18,20 @@
       "Bash(npx next dev --no-turbo)",
       "Bash(npx next --help:*)",
       "Bash(tasklist:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(ls -la /Users/guilhemterrier/Downloads/TheBookClub/src/app/livres/[id]/)",
+      "Bash(npx tsc:*)",
+      "mcp__supabase__get_logs",
+      "Bash(grep -n \"tablet:\\\\|desktop:\" /Users/guilhemterrier/Downloads/TheBookClub/src/app/livres/[id]/page.tsx)",
+      "Bash(ls /Users/guilhemterrier/Downloads/TheBookClub/.env*)",
+      "Bash(python3 -c \"import openpyxl; wb = openpyxl.load_workbook\\(''/Users/guilhemterrier/Downloads/500_livres_isbn.xlsx''\\); ws = wb.active; headers = [cell.value for cell in ws[1]]; print\\(''Headers:'', headers\\); print\\(''Row 2:'', [cell.value for cell in ws[2]]\\); print\\(''Row 3:'', [cell.value for cell in ws[3]]\\)\")",
+      "Bash(python3 -c \"import xlrd; wb = xlrd.open_workbook\\(''/Users/guilhemterrier/Downloads/500_livres_isbn.xlsx''\\); ws = wb.sheet_by_index\\(0\\); print\\(''Headers:'', ws.row_values\\(0\\)\\); print\\(''Row 2:'', ws.row_values\\(1\\)\\)\")",
+      "Bash(python3 -c \"import pandas; df = pandas.read_excel\\(''/Users/guilhemterrier/Downloads/500_livres_isbn.xlsx''\\); print\\(df.columns.tolist\\(\\)\\); print\\(df.head\\(3\\)\\)\")",
+      "Bash(pip3 list:*)",
+      "Bash(npm list:*)",
+      "Bash(pip3 install:*)",
+      "Bash(python3:*)",
+      "Bash(python scripts/import_books.py)"
     ]
   },
   "enableAllProjectMcpServers": true,

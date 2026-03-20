@@ -13,7 +13,7 @@ export function Footer() {
 
   return (
     <footer className="bg-dark w-full">
-      <div className="max-w-[1500px] mx-auto px-5 md:px-[40px] py-[40px]">
+      <div className="w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto py-[40px]">
         <div className="flex flex-col md:flex-row items-start justify-between gap-8">
           {/* Left Section - Logo + Support Message */}
           <div className="flex flex-col md:flex-row items-start gap-10">

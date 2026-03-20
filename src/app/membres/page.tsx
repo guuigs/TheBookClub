@@ -136,7 +136,7 @@ export default function MembersPage() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main id="main-content" className="flex-1 w-full max-w-[1500px] mx-auto px-5 py-10 lg:py-[80px]">
+      <main id="main-content" className="flex-1 w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto py-10 desktop:py-[80px]">
         <h1 className="sr-only">Membres du Club</h1>
 
         <div className="flex flex-col gap-4 mb-10">
@@ -212,7 +212,7 @@ export default function MembersPage() {
         </div>
 
         {filteredAndSorted.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-8 justify-items-center" aria-live="polite">
+          <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-8 justify-items-center" aria-live="polite">
             {filteredAndSorted.map((member) => (
               <MemberCard
                 key={member.id}

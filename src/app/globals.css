@@ -64,6 +64,8 @@
   --color-gray: var(--color-gray);
   --color-cream: var(--color-cream);
   --color-background: var(--color-background);
+  --breakpoint-tablet: 700px;
+  --breakpoint-desktop: 1200px;
 
   /* Custom spacing */
   --spacing-4xl: 60px;
@@ -133,22 +135,49 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Mobile Typography */
-@media (max-width: 768px) {
+/* Tablet Typography (700px – 1199px) */
+@media (max-width: 1199px) {
   .text-t1 {
-    font-size: 36px;
+    font-size: 42px;
   }
 
   .text-t2 {
-    font-size: 28px;
+    font-size: 32px;
   }
 
   .text-t3 {
-    font-size: 24px;
+    font-size: 26px;
   }
 
   .text-t4 {
-    font-size: 20px;
+    font-size: 21px;
+  }
+
+  .text-body {
+    font-size: 17px;
+  }
+
+  .text-small {
+    font-size: 13px;
+  }
+}
+
+/* Mobile Typography (< 700px) */
+@media (max-width: 699px) {
+  .text-t1 {
+    font-size: 34px;
+  }
+
+  .text-t2 {
+    font-size: 26px;
+  }
+
+  .text-t3 {
+    font-size: 22px;
+  }
+
+  .text-t4 {
+    font-size: 19px;
   }
 
   .text-body {

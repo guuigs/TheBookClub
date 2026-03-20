@@ -5,12 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Input } from "@/components/ui";
-import { BookCard, ListCard, MemberCard } from "@/components/features";
+import { BookCard, ListCard, MemberCard, AddBookModal } from "@/components/features";
 import { createClient } from "@/lib/supabase/browser";
 import type { Book, BookList, User, MemberBadge } from "@/types";
 
 type SearchTab = "books" | "lists" | "users";
-type SortOption = "popular" | "rating" | "recent";
+type SortOption = "popular" | "rating";
 type SortDirection = "asc" | "desc";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,11 +21,12 @@ function mapBook(row: any): Book {
     author: { id: row.author_id ?? "", name: row.author_name ?? "", booksCount: 0 },
     coverUrl: row.cover_url ?? "",
     description: row.description ?? "",
-    publishedYear: row.published_year ?? 0,
     genre: row.genre ?? "",
     averageRating: Number(row.average_rating ?? 0),
     totalVotes: Number(row.total_votes ?? 0),
     ratingDistribution: [],
+    freeReadLink: row.free_read_link ?? undefined,
+    buyLink: row.buy_link ?? undefined,
   };
 }
 
@@ -94,6 +95,7 @@ function SearchContent() {
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map());
+  const [isAddBookOpen, setIsAddBookOpen] = useState(false);
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
@@ -111,7 +113,7 @@ function SearchContent() {
            items:book_list_items(book:books(id, title, cover_url, author_id)),
            likes_count:list_likes(count),
            books_count:book_list_items(count)`
-        ),
+        ).eq("is_private", false),
         supabase.from("profiles_with_stats").select("*"),
         supabase.auth.getUser(),
       ]);
@@ -154,7 +156,6 @@ function SearchContent() {
       switch (sortBy) {
         case "popular": comparison = b.totalVotes - a.totalVotes; break;
         case "rating":  comparison = b.averageRating - a.averageRating; break;
-        case "recent":  comparison = b.publishedYear - a.publishedYear; break;
       }
       return sortDirection === "desc" ? comparison : -comparison;
     });
@@ -196,14 +197,13 @@ function SearchContent() {
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: "popular", label: "Popularité" },
     { value: "rating", label: "Note" },
-    { value: "recent", label: "Récent" },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main id="main-content" className="flex-1 w-full max-w-[1500px] mx-auto px-5 py-10 lg:py-[80px]">
+      <main id="main-content" className="flex-1 w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto py-10 desktop:py-[80px]">
         <h1 className="sr-only">Recherche</h1>
 
         <div className="flex flex-col gap-8 mb-10">
@@ -265,23 +265,33 @@ function SearchContent() {
         </div>
 
         {activeTab === "books" && (
-          sortedBooks.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-              {sortedBooks.map((book) => (
-                <BookCard key={book.id} book={book} size="md" showTitle showAuthor myRating={userRatings.get(book.id) ?? null} />
-              ))}
+          <div className="flex flex-col gap-8">
+            {sortedBooks.length > 0 ? (
+              <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-5">
+                {sortedBooks.map((book) => (
+                  <BookCard key={book.id} book={book} size="md" showTitle showAuthor myRating={userRatings.get(book.id) ?? null} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <p className="text-t3 font-semibold text-dark">Aucun livre trouvé</p>
+                <p className="text-body text-gray">Essayez avec d&apos;autres mots-clés</p>
+              </div>
+            )}
+            <div className="flex justify-center pt-4 border-t border-gray/10">
+              <button
+                onClick={() => setIsAddBookOpen(true)}
+                className="text-body text-gray hover:text-dark transition-colors underline underline-offset-4"
+              >
+                Vous ne trouvez pas votre livre ? Ajoutez-le
+              </button>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <p className="text-t3 font-semibold text-dark">Aucun livre trouvé</p>
-              <p className="text-body text-gray">Essayez avec d&apos;autres mots-clés</p>
-            </div>
-          )
+          </div>
         )}
 
         {activeTab === "lists" && (
           filteredLists.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 tablet:grid-cols-2 gap-5">
               {filteredLists.map((list) => (
                 <ListCard key={list.id} list={list} />
               ))}
@@ -296,7 +306,7 @@ function SearchContent() {
 
         {activeTab === "users" && (
           sortedUsers.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+            <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-5">
               {sortedUsers.map((user) => (
                 <MemberCard key={user.id} user={user} />
               ))}
@@ -309,6 +319,8 @@ function SearchContent() {
           )
         )}
       </main>
+
+      <AddBookModal isOpen={isAddBookOpen} onClose={() => setIsAddBookOpen(false)} />
 
       <Footer />
     </div>

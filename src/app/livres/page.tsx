@@ -4,12 +4,12 @@ import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
-import { BookCard } from "@/components/features";
+import { BookCard, AddBookModal } from "@/components/features";
 import { Pagination } from "@/components/ui";
 import { createClient } from "@/lib/supabase/browser";
 import type { Book } from "@/types";
 
-type SortOption = "popular" | "rating" | "recent";
+type SortOption = "popular" | "rating";
 type SortDirection = "asc" | "desc";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +26,6 @@ function mapBookRow(row: any): Book {
     },
     coverUrl: row.cover_url ?? "",
     description: row.description ?? "",
-    publishedYear: row.published_year ?? 0,
     genre: row.genre ?? "",
     averageRating: Number(row.average_rating ?? 0),
     totalVotes: Number(row.total_votes ?? 0),
@@ -43,6 +42,7 @@ function BooksContent() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [userRatings, setUserRatings] = useState<Map<string, number>>(new Map());
+  const [isAddBookOpen, setIsAddBookOpen] = useState(false);
   const ITEMS_PER_PAGE = 24;
 
   useEffect(() => {
@@ -82,9 +82,6 @@ function BooksContent() {
         case "rating":
           comparison = b.averageRating - a.averageRating;
           break;
-        case "recent":
-          comparison = b.publishedYear - a.publishedYear;
-          break;
       }
       return sortDirection === "desc" ? comparison : -comparison;
     });
@@ -113,14 +110,13 @@ function BooksContent() {
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: "popular", label: "Popularité" },
     { value: "rating", label: "Note" },
-    { value: "recent", label: "Récent" },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main id="main-content" className="flex-1 w-full max-w-[1500px] mx-auto px-5 py-10 lg:py-[80px]">
+      <main id="main-content" className="flex-1 w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto py-10 desktop:py-[80px]">
         <h1 className="sr-only">Livres</h1>
 
         <div className="flex flex-wrap items-center gap-3 mb-10" role="toolbar" aria-label="Options de tri">
@@ -147,7 +143,7 @@ function BooksContent() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5" aria-live="polite">
+        <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-5" aria-live="polite">
           {paginatedBooks.map((book) => (
             <BookCard key={book.id} book={book} size="md" showTitle showAuthor myRating={userRatings.get(book.id) ?? null} />
           ))}
@@ -167,7 +163,18 @@ function BooksContent() {
             className="mt-10"
           />
         )}
+
+        <div className="flex justify-center pt-8 mt-4 border-t border-gray/10">
+          <button
+            onClick={() => setIsAddBookOpen(true)}
+            className="text-body text-gray hover:text-dark transition-colors underline underline-offset-4"
+          >
+            Vous ne trouvez pas votre livre ? Ajoutez-le
+          </button>
+        </div>
       </main>
+
+      <AddBookModal isOpen={isAddBookOpen} onClose={() => setIsAddBookOpen(false)} />
 
       <Footer />
     </div>

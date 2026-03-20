@@ -49,7 +49,7 @@ export function MemberCard({ user, onFollow, showFollowButton = false, className
 
         {/* Info */}
         <div className="flex flex-col items-center gap-1 text-center">
-          <h3 className="font-display text-[16px] text-dark tracking-tight group-hover:text-primary transition-colors line-clamp-1">
+          <h3 className="font-display text-body text-dark tracking-tight group-hover:text-primary transition-colors line-clamp-1">
             {user.displayName}
           </h3>
           <p className="text-[11px] font-medium text-gray tracking-tight">

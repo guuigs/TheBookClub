@@ -112,7 +112,7 @@ export default async function ProfilePage({
           </div>
 
           <div className="flex-1 flex flex-col gap-5">
-            <h1 className="font-display text-[56px] text-dark tracking-tight leading-none">
+            <h1 className="font-display text-t1 text-dark tracking-tight leading-none">
               {profile.displayName}
             </h1>
 

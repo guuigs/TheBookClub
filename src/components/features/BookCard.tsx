@@ -32,11 +32,11 @@ export interface BookCardProps {
   className?: string;
 }
 
-const sizeConfig: Record<BookCardSize, { width: number; height: number; containerClass: string }> = {
-  sm: { width: 140, height: 210, containerClass: "w-[140px]" },
-  md: { width: 185, height: 278, containerClass: "w-[185px]" },
-  lg: { width: 220, height: 330, containerClass: "w-[220px]" },
-  xl: { width: 260, height: 390, containerClass: "w-[260px]" },
+const sizeConfig: Record<BookCardSize, { containerClass: string; sizes: string }> = {
+  sm: { containerClass: "w-[90px] tablet:w-[140px]",                           sizes: "(max-width: 699px) 90px, 140px" },
+  md: { containerClass: "w-[140px] tablet:w-[185px]",                          sizes: "(max-width: 699px) 140px, 185px" },
+  lg: { containerClass: "w-[150px] tablet:w-[210px] desktop:w-[220px]",        sizes: "(max-width: 699px) 150px, (max-width: 1199px) 210px, 220px" },
+  xl: { containerClass: "w-[160px] tablet:w-[240px] desktop:w-[260px]",        sizes: "(max-width: 699px) 160px, (max-width: 1199px) 240px, 260px" },
 };
 
 /**
@@ -63,10 +63,9 @@ export function BookCard({
     >
       {/* Cover Container */}
       <div
-        className={`relative bg-cream overflow-hidden ${
+        className={`relative w-full aspect-[2/3] bg-cream overflow-hidden ${
           variant === "default" ? "rounded-sm transition-transform group-hover:scale-[1.02]" : ""
         }`}
-        style={{ width: config.width, height: config.height }}
       >
         {/* Cover Image or Placeholder */}
         {book.coverUrl ? (
@@ -75,7 +74,7 @@ export function BookCard({
             alt={`Couverture de ${book.title}`}
             fill
             className="object-cover"
-            sizes={`${config.width}px`}
+            sizes={config.sizes}
           />
         ) : (
           <BookPlaceholder title={book.title} size={size} />
