@@ -9,11 +9,15 @@ import { Pagination } from "@/components/ui";
 import { createClient } from "@/lib/supabase/browser";
 import type { Book } from "@/types";
 
-type SortOption = "popular" | "rating";
+type SortOption = "popular" | "rating" | "recent";
 type SortDirection = "asc" | "desc";
 
+interface BookWithDate extends Book {
+  createdAt: string;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapBookRow(row: any): Book {
+function mapBookRow(row: any): BookWithDate {
   return {
     id: row.id,
     title: row.title,
@@ -30,6 +34,7 @@ function mapBookRow(row: any): Book {
     averageRating: Number(row.average_rating ?? 0),
     totalVotes: Number(row.total_votes ?? 0),
     ratingDistribution: [],
+    createdAt: row.created_at ?? "",
   };
 }
 
@@ -37,7 +42,7 @@ function BooksContent() {
   const searchParams = useSearchParams();
   const initialSort = (searchParams.get("sort") as SortOption) || "popular";
 
-  const [books, setBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<BookWithDate[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>(initialSort);
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -82,6 +87,9 @@ function BooksContent() {
         case "rating":
           comparison = b.averageRating - a.averageRating;
           break;
+        case "recent":
+          comparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          break;
       }
       return sortDirection === "desc" ? comparison : -comparison;
     });
@@ -110,6 +118,7 @@ function BooksContent() {
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: "popular", label: "Popularité" },
     { value: "rating", label: "Note" },
+    { value: "recent", label: "Récent" },
   ];
 
   return (

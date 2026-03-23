@@ -155,33 +155,19 @@ export default function BookPage({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get list of friends (users this user follows)
-      const { data: followingData } = await supabase
-        .from("follows")
-        .select("following_id")
-        .eq("follower_id", user.id);
-
-      if (!followingData || followingData.length === 0) return;
-
-      const friendIds = followingData.map(f => f.following_id);
-
-      // Get friends' ratings for this book
+      // Get friends' ratings using secure RPC function (bypasses RLS)
       const { data: friendsRatingsData } = await supabase
-        .from("ratings")
-        .select(`score, user:profiles!ratings_user_id_fkey(id, username, display_name, avatar_url, badge)`)
-        .eq("book_id", id)
-        .in("user_id", friendIds)
-        .limit(4);
+        .rpc("get_friends_ratings", { book_uuid: id });
 
       if (friendsRatingsData) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapped = friendsRatingsData.map((r: any) => ({
+        const mapped = friendsRatingsData.slice(0, 4).map((r: any) => ({
           user: {
-            id: r.user?.id ?? "",
-            username: r.user?.username ?? "",
-            displayName: r.user?.display_name ?? "",
-            avatarUrl: r.user?.avatar_url ?? undefined,
-            badge: (r.user?.badge as MemberBadge) ?? "member",
+            id: r.user_id ?? "",
+            username: r.username ?? "",
+            displayName: r.display_name ?? "",
+            avatarUrl: r.avatar_url ?? undefined,
+            badge: (r.badge as MemberBadge) ?? "member",
             booksRead: 0,
             listsCount: 0,
             followersCount: 0,
@@ -191,6 +177,16 @@ export default function BookPage({
         }));
         setFriendsRatings(mapped);
       }
+
+      // Get list of friends for comments query
+      const { data: followingData } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", user.id);
+
+      if (!followingData || followingData.length === 0) return;
+
+      const friendIds = followingData.map(f => f.following_id);
 
       // Get friends' comments for this book
       const { data: friendsCommentsData } = await supabase

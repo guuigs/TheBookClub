@@ -217,7 +217,7 @@ export default function MembersPage() {
               <MemberCard
                 key={member.id}
                 user={member}
-                showFollowButton={member.id !== user?.id}
+                showFollowButton={false}
               />
             ))}
           </div>

@@ -50,35 +50,19 @@ export default function BookFriendsPage({
         return;
       }
 
-      // Get friends (users this user follows)
-      const { data: followingData } = await supabase
-        .from("follows")
-        .select("following_id")
-        .eq("follower_id", user.id);
-
-      if (!followingData || followingData.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const friendIds = followingData.map(f => f.following_id);
-
-      // Get friends' ratings for this book
+      // Get friends' ratings using secure RPC function (bypasses RLS)
       const { data: ratingsData } = await supabase
-        .from("ratings")
-        .select(`score, user:profiles!ratings_user_id_fkey(id, username, display_name, avatar_url, badge)`)
-        .eq("book_id", id)
-        .in("user_id", friendIds);
+        .rpc("get_friends_ratings", { book_uuid: id });
 
       if (ratingsData) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped: FriendRating[] = ratingsData.map((r: any) => ({
           user: {
-            id: r.user?.id ?? "",
-            username: r.user?.username ?? "",
-            displayName: r.user?.display_name ?? "",
-            avatarUrl: r.user?.avatar_url ?? undefined,
-            badge: (r.user?.badge as MemberBadge) ?? "member",
+            id: r.user_id ?? "",
+            username: r.username ?? "",
+            displayName: r.display_name ?? "",
+            avatarUrl: r.avatar_url ?? undefined,
+            badge: (r.badge as MemberBadge) ?? "member",
             booksRead: 0,
             listsCount: 0,
             followersCount: 0,
