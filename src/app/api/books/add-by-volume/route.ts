@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-function toHdCover(url: string | null): string | null {
+function getBestCover(imageLinks: Record<string, string> | undefined): string | null {
+  if (!imageLinks) return null
+
+  // Try to get the best quality image available (in order of preference)
+  const url = imageLinks.extraLarge
+    ?? imageLinks.large
+    ?? imageLinks.medium
+    ?? imageLinks.small
+    ?? imageLinks.thumbnail
+    ?? imageLinks.smallThumbnail
+    ?? null
+
   if (!url) return null
+
+  // Only do safe transformations
   return url
     .replace(/^http:\/\//, 'https://')
     .replace(/&edge=curl/, '')
-    .replace(/zoom=\d/, 'zoom=0')
-    .concat('&fife=w600')
 }
 
 // Strip HTML tags and decode common HTML entities
@@ -79,9 +90,7 @@ export async function POST(request: NextRequest) {
   const authorsRaw: string[] = volumeInfo.authors ?? []
   const genre: string | null = volumeInfo.categories?.join(', ') ?? null
   const rawDescription: string | null = volumeInfo.description ?? null
-  const rawCoverUrl: string | null =
-    volumeInfo.imageLinks?.thumbnail ?? volumeInfo.imageLinks?.smallThumbnail ?? null
-  const coverUrl = toHdCover(rawCoverUrl)
+  const coverUrl = getBestCover(volumeInfo.imageLinks)
 
   // Validation 1: Cover required
   if (!coverUrl) {

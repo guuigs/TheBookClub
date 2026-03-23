@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 function toHdCover(url: string | null): string | null {
   if (!url) return null
+  // Only do safe transformations - don't change zoom level as it might not exist
   return url
     .replace(/^http:\/\//, 'https://')
     .replace(/&edge=curl/, '')
-    .replace(/zoom=\d/, 'zoom=0')
-    .concat('&fife=w600')
 }
 
 export async function GET(request: NextRequest) {
