@@ -55,6 +55,7 @@ export default function BookCommentsPage({
          likes_count:comment_likes(count)`
       )
       .eq("book_id", id)
+      .eq("is_private", false)
       .order("created_at", { ascending: false })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then(({ data }) => {

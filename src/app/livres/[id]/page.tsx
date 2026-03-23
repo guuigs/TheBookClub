@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Lock, Globe } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { Button, InteractiveStarRating, useToast } from "@/components/ui";
 import {
@@ -86,6 +87,7 @@ export default function BookPage({
   const [showShareModal, setShowShareModal] = useState(false);
   const [myRating, setMyRating] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [isPrivateComment, setIsPrivateComment] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [ratingDistribution, setRatingDistribution] = useState<number[]>(Array(10).fill(0));
   const [friendsRatings, setFriendsRatings] = useState<{ user: User; rating: number }[]>([]);
@@ -134,6 +136,7 @@ export default function BookPage({
         }
       });
 
+    // Fetch public comments only (private comments are personal notes)
     supabase
       .from("comments")
       .select(
@@ -141,6 +144,7 @@ export default function BookPage({
          likes_count:comment_likes(count)`
       )
       .eq("book_id", id)
+      .eq("is_private", false)
       .order("created_at", { ascending: false })
       .limit(10)
       .then(({ data }) => {
@@ -188,11 +192,12 @@ export default function BookPage({
 
       const friendIds = followingData.map(f => f.following_id);
 
-      // Get friends' comments for this book
+      // Get friends' public comments for this book
       const { data: friendsCommentsData } = await supabase
         .from("comments")
         .select(`*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge), likes_count:comment_likes(count)`)
         .eq("book_id", id)
+        .eq("is_private", false)
         .in("user_id", friendIds)
         .order("created_at", { ascending: false })
         .limit(4);
@@ -237,13 +242,16 @@ export default function BookPage({
   const handleSubmitComment = async () => {
     if (!commentText.trim()) return;
     setIsSubmittingComment(true);
-    const { data: newComment, error } = await createComment(id, commentText.trim());
+    const { data: newComment, error } = await createComment(id, commentText.trim(), isPrivateComment);
     if (!error && newComment) {
       setCommentText("");
+      setIsPrivateComment(false);
       setShowCommentModal(false);
-      toast.success("Commentaire publié !");
-      // Add new comment at the top of the list
-      setComments((prev) => [newComment, ...prev]);
+      toast.success(isPrivateComment ? "Note personnelle enregistrée !" : "Commentaire publié !");
+      // Add new comment at the top of the list (only if public, or show in a separate section)
+      if (!isPrivateComment) {
+        setComments((prev) => [newComment, ...prev]);
+      }
     } else {
       toast.error(error ?? "Erreur lors de la publication");
     }
@@ -554,10 +562,45 @@ export default function BookPage({
           >
             <h2 id="comment-modal-title" className="font-display text-t2 text-dark tracking-tight">Commenter</h2>
             <p className="text-body text-gray font-medium">{book.title}</p>
+
+            {/* Visibility Toggle */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPrivateComment(false)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  !isPrivateComment
+                    ? "bg-dark text-white border-dark"
+                    : "bg-white text-dark border-gray/30 hover:border-gray/50"
+                }`}
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-sm font-medium">Commentaire public</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPrivateComment(true)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  isPrivateComment
+                    ? "bg-dark text-white border-dark"
+                    : "bg-white text-dark border-gray/30 hover:border-gray/50"
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+                <span className="text-sm font-medium">Note personnelle</span>
+              </button>
+            </div>
+
+            <p className="text-small text-gray">
+              {isPrivateComment
+                ? "Visible uniquement par vous. Idéal pour vos notes de lecture."
+                : "Visible par tous les membres du club."}
+            </p>
+
             <textarea
               value={commentText}
               onChange={(e) => setCommentText(e.target.value.slice(0, 2000))}
-              placeholder="Partagez votre avis sur ce livre..."
+              placeholder={isPrivateComment ? "Notez vos réflexions personnelles..." : "Partagez votre avis sur ce livre..."}
               rows={5}
               maxLength={2000}
               className="w-full px-4 py-3 bg-gray/10 border border-gray/20 rounded-lg text-body text-dark placeholder:text-gray focus:outline-none focus:ring-2 focus:ring-primary resize-none"
@@ -573,7 +616,7 @@ export default function BookPage({
                 disabled={!commentText.trim()}
                 isLoading={isSubmittingComment}
               >
-                Publier
+                {isPrivateComment ? "Enregistrer" : "Publier"}
               </Button>
             </div>
           </div>

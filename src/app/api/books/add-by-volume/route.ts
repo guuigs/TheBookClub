@@ -1,24 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-function getBestCover(imageLinks: Record<string, string> | undefined): string | null {
+// Check if an image URL returns a valid image (HTTP 200)
+async function isImageUrlValid(url: string): Promise<boolean> {
+  try {
+    const response = await fetch(url, { method: 'HEAD' })
+    if (!response.ok) return false
+    const contentType = response.headers.get('content-type')
+    return contentType?.startsWith('image/') ?? false
+  } catch {
+    return false
+  }
+}
+
+// Try to find the best quality cover by testing zoom levels from 6 down to 0
+async function getBestCover(imageLinks: Record<string, string> | undefined): Promise<string | null> {
   if (!imageLinks) return null
 
-  // Try to get the best quality image available (in order of preference)
-  const url = imageLinks.extraLarge
-    ?? imageLinks.large
-    ?? imageLinks.medium
-    ?? imageLinks.small
-    ?? imageLinks.thumbnail
-    ?? imageLinks.smallThumbnail
-    ?? null
+  // Get base URL from thumbnail or smallThumbnail
+  const baseUrl = imageLinks.thumbnail ?? imageLinks.smallThumbnail ?? null
+  if (!baseUrl) return null
 
-  if (!url) return null
-
-  // Only do safe transformations
-  return url
+  // Clean the base URL
+  const cleanUrl = baseUrl
     .replace(/^http:\/\//, 'https://')
     .replace(/&edge=curl/, '')
+
+  // Try zoom levels from 6 (highest) down to 0 (lowest)
+  for (let zoom = 6; zoom >= 0; zoom--) {
+    const testUrl = cleanUrl.replace(/zoom=\d/, `zoom=${zoom}`)
+    if (await isImageUrlValid(testUrl)) {
+      return testUrl
+    }
+  }
+
+  // If no zoom level works, try the original URL as-is
+  if (await isImageUrlValid(cleanUrl)) {
+    return cleanUrl
+  }
+
+  return null
 }
 
 // Strip HTML tags and decode common HTML entities
@@ -90,7 +111,7 @@ export async function POST(request: NextRequest) {
   const authorsRaw: string[] = volumeInfo.authors ?? []
   const genre: string | null = volumeInfo.categories?.join(', ') ?? null
   const rawDescription: string | null = volumeInfo.description ?? null
-  const coverUrl = getBestCover(volumeInfo.imageLinks)
+  const coverUrl = await getBestCover(volumeInfo.imageLinks)
 
   // Validation 1: Cover required
   if (!coverUrl) {

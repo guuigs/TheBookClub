@@ -63,6 +63,7 @@ export interface Comment {
   createdAt: Date;
   likesCount: number;
   isLikedByCurrentUser?: boolean;
+  isPrivate?: boolean;
 }
 
 // List

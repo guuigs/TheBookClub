@@ -64,11 +64,12 @@ export default function BookFriendsCommentsPage({
 
       const friendIds = followingData.map(f => f.following_id);
 
-      // Get friends' comments for this book
+      // Get friends' public comments for this book
       const { data: commentsData } = await supabase
         .from("comments")
         .select(`*, user:profiles!comments_user_id_fkey(id, username, display_name, avatar_url, badge), likes_count:comment_likes(count)`)
         .eq("book_id", id)
+        .eq("is_private", false)
         .in("user_id", friendIds)
         .order("created_at", { ascending: false });
 
