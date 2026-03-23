@@ -141,10 +141,15 @@ export function AuthProvider({
     if (error) return { error: error.message }
     if (!data.user) return { error: 'Erreur lors de la création du compte.' }
 
-    const { error: profileError } = await supabase.from('profiles').insert({
+    // Use upsert to handle both cases:
+    // 1. If trigger already created the profile, update it with user's chosen username/display_name
+    // 2. If no trigger exists, insert the profile
+    const { error: profileError } = await supabase.from('profiles').upsert({
       id: data.user.id,
       username,
       display_name: displayName,
+    }, {
+      onConflict: 'id',
     })
     if (profileError) return { error: profileError.message }
 

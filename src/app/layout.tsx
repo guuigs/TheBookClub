@@ -31,10 +31,24 @@ const mediamoure = localFont({
 export const metadata: Metadata = {
   title: "The Book Club",
   description: "Votre communaute de lecteurs passionnes",
+  metadataBase: new URL("https://thebookclub.cafe"),
   icons: {
     icon: "/images/icon.svg",
     shortcut: "/images/icon.svg",
     apple: "/images/icon.svg",
+  },
+  openGraph: {
+    title: "The Book Club",
+    description: "Votre communaute de lecteurs passionnes",
+    url: "https://thebookclub.cafe",
+    siteName: "The Book Club",
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "The Book Club",
+    description: "Votre communaute de lecteurs passionnes",
   },
 };
 
