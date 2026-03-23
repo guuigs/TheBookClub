@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { X, ChevronLeft, Search, Loader2 } from "lucide-react";
+import { X, ChevronLeft, Search, Loader2, Book, User, Hash } from "lucide-react";
 import { Button } from "@/components/ui";
 
 export interface AddBookModalProps {
@@ -30,57 +30,78 @@ const loadingMessages = [
 export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
   const router = useRouter();
   const [step, setStep] = useState<ModalStep>("search");
-  const [query, setQuery] = useState("");
+  const [titleQuery, setTitleQuery] = useState("");
+  const [authorQuery, setAuthorQuery] = useState("");
+  const [isbnQuery, setIsbnQuery] = useState("");
   const [results, setResults] = useState<GoogleBookResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selected, setSelected] = useState<GoogleBookResult | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(loadingMessages[0]);
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if we have a valid search
+  const hasValidSearch = titleQuery.length >= 2 || authorQuery.length >= 2 || isbnQuery.length >= 2;
+  const hasAnyInput = titleQuery.length > 0 || authorQuery.length > 0 || isbnQuery.length > 0;
 
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
       setStep("search");
-      setQuery("");
+      setTitleQuery("");
+      setAuthorQuery("");
+      setIsbnQuery("");
       setResults([]);
       setSelected(null);
       setError(null);
     } else {
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setTimeout(() => titleInputRef.current?.focus(), 50);
     }
   }, [isOpen]);
 
-  // Debounced Google Books search
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (!query.trim() || query.length < 2) {
+  // Debounced search function
+  const performSearch = useCallback(async () => {
+    if (!hasValidSearch) {
       setResults([]);
       setIsSearching(false);
       return;
     }
 
     setIsSearching(true);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `/api/books/search-google?q=${encodeURIComponent(query)}`
-        );
-        const data = await res.json();
-        setResults(data.results ?? []);
-      } catch {
-        setResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
+    try {
+      const params = new URLSearchParams();
+      if (titleQuery.trim()) params.set("title", titleQuery.trim());
+      if (authorQuery.trim()) params.set("author", authorQuery.trim());
+      if (isbnQuery.trim()) params.set("isbn", isbnQuery.trim());
+
+      const res = await fetch(`/api/books/search-google?${params.toString()}`);
+      const data = await res.json();
+      setResults(data.results ?? []);
+    } catch {
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [titleQuery, authorQuery, isbnQuery, hasValidSearch]);
+
+  // Debounced Google Books search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!hasValidSearch) {
+      setResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    debounceRef.current = setTimeout(performSearch, 350);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query]);
+  }, [titleQuery, authorQuery, isbnQuery, hasValidSearch, performSearch]);
 
   const handleSelect = (book: GoogleBookResult) => {
     setSelected(book);
@@ -91,7 +112,7 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
   const handleBack = () => {
     setStep("search");
     setError(null);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    setTimeout(() => titleInputRef.current?.focus(), 50);
   };
 
   const handleConfirm = async () => {
@@ -169,35 +190,71 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
 
         {/* Step: Search */}
         {step === "search" && (
-          <div className="flex flex-col p-6 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray pointer-events-none" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Titre, auteur, ISBN..."
-                className="w-full pl-10 pr-4 py-3 border border-gray/30 rounded-lg text-body text-dark placeholder:text-gray/60 focus:border-dark focus:ring-1 focus:ring-dark outline-none transition-colors"
-              />
+          <div className="flex flex-col p-6 gap-5">
+            {/* Search Fields */}
+            <div className="flex flex-col gap-3">
+              {/* Title field */}
+              <div className="relative">
+                <Book className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray pointer-events-none" />
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={titleQuery}
+                  onChange={(e) => setTitleQuery(e.target.value)}
+                  placeholder="Titre du livre"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray/30 rounded-lg text-body text-dark placeholder:text-gray/60 focus:border-dark focus:ring-1 focus:ring-dark outline-none transition-colors"
+                />
+              </div>
+
+              {/* Author field */}
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray pointer-events-none" />
+                <input
+                  type="text"
+                  value={authorQuery}
+                  onChange={(e) => setAuthorQuery(e.target.value)}
+                  placeholder="Auteur"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray/30 rounded-lg text-body text-dark placeholder:text-gray/60 focus:border-dark focus:ring-1 focus:ring-dark outline-none transition-colors"
+                />
+              </div>
+
+              {/* ISBN field */}
+              <div className="relative">
+                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray pointer-events-none" />
+                <input
+                  type="text"
+                  value={isbnQuery}
+                  onChange={(e) => setIsbnQuery(e.target.value)}
+                  placeholder="ISBN (optionnel)"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray/30 rounded-lg text-body text-dark placeholder:text-gray/60 focus:border-dark focus:ring-1 focus:ring-dark outline-none transition-colors"
+                />
+              </div>
             </div>
 
-            <div className="flex flex-col min-h-[120px] max-h-[380px] overflow-y-auto">
+            {/* Helper text */}
+            {!hasAnyInput && (
+              <p className="text-small text-gray text-center">
+                Remplissez au moins un champ pour rechercher
+              </p>
+            )}
+
+            {/* Results */}
+            <div className="flex flex-col min-h-[100px] max-h-[280px] overflow-y-auto">
               {isSearching && (
-                <div className="flex justify-center py-10">
+                <div className="flex justify-center py-8">
                   <Loader2 className="w-5 h-5 text-gray animate-spin" />
                 </div>
               )}
 
-              {!isSearching && query.length >= 2 && results.length === 0 && (
-                <p className="text-body text-gray text-center py-10">
-                  Aucun résultat pour &quot;{query}&quot;
+              {!isSearching && hasValidSearch && results.length === 0 && (
+                <p className="text-body text-gray text-center py-8">
+                  Aucun résultat trouvé
                 </p>
               )}
 
-              {!isSearching && query.length < 2 && (
-                <p className="text-small text-gray text-center py-10">
-                  Saisissez au moins 2 caractères pour rechercher
+              {!isSearching && hasAnyInput && !hasValidSearch && (
+                <p className="text-small text-gray text-center py-8">
+                  Saisissez au moins 2 caractères dans un champ
                 </p>
               )}
 
@@ -206,7 +263,7 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                   <button
                     key={book.volumeId}
                     onClick={() => handleSelect(book)}
-                    className="flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-gray/5 transition-colors text-left w-full"
+                    className="flex items-center gap-4 px-3 py-2.5 rounded-lg hover:bg-gray/5 transition-colors text-left w-full"
                   >
                     <div className="w-9 h-14 bg-cream rounded shrink-0 overflow-hidden">
                       {book.coverUrl ? (

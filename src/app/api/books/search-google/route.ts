@@ -10,14 +10,34 @@ function toHdCover(url: string | null): string | null {
 }
 
 export async function GET(request: NextRequest) {
-  const q = request.nextUrl.searchParams.get('q')?.trim()
+  const title = request.nextUrl.searchParams.get('title')?.trim() || ''
+  const author = request.nextUrl.searchParams.get('author')?.trim() || ''
+  const isbn = request.nextUrl.searchParams.get('isbn')?.trim() || ''
 
-  if (!q || q.length < 2) {
+  // Build query with Google Books operators
+  const queryParts: string[] = []
+
+  if (title) {
+    queryParts.push(`intitle:${title}`)
+  }
+  if (author) {
+    queryParts.push(`inauthor:${author}`)
+  }
+  if (isbn) {
+    queryParts.push(`isbn:${isbn}`)
+  }
+
+  // Need at least one search term with minimum 2 characters
+  const hasValidSearch = title.length >= 2 || author.length >= 2 || isbn.length >= 2
+
+  if (queryParts.length === 0 || !hasValidSearch) {
     return NextResponse.json({ results: [] })
   }
 
+  const query = queryParts.join('+')
+
   const res = await fetch(
-    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=8`
+    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=12`
   )
 
   if (!res.ok) {
