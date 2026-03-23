@@ -8,6 +8,12 @@ import { getBooks } from "@/lib/db/books";
 import { createClient } from "@/lib/supabase/server";
 import { getBadgeLabel } from "@/lib/constants/badges";
 
+interface UserRating {
+  book_id: string;
+  score: number;
+  created_at: string;
+}
+
 export default async function ProfileBooksPage({
   params,
 }: {
@@ -26,17 +32,16 @@ export default async function ProfileBooksPage({
   const { data: { user: authUser } } = await supabase.auth.getUser();
   const isOwnProfile = authUser?.id === id;
 
+  // Use RPC function to bypass RLS when viewing other users' profiles
   const { data: userRatings } = await supabase
-    .from("ratings")
-    .select("book_id, score, created_at")
-    .eq("user_id", id);
+    .rpc("get_user_ratings", { target_user_id: id }) as { data: UserRating[] | null };
 
   const ratingMap = new Map(
-    (userRatings ?? []).map((r) => [r.book_id, r.score])
+    (userRatings ?? []).map((r: UserRating) => [r.book_id, r.score])
   );
 
   const ratingDatesMap = new Map(
-    (userRatings ?? []).map((r) => [r.book_id, r.created_at])
+    (userRatings ?? []).map((r: UserRating) => [r.book_id, r.created_at])
   );
 
   const ratedBooks = allBooks.filter((b) => ratingMap.has(b.id));

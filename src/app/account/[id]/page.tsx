@@ -9,6 +9,12 @@ import { getBooks } from "@/lib/db/books";
 import { createClient } from "@/lib/supabase/server";
 import { getBadgeLabel } from "@/lib/constants/badges";
 
+interface UserRating {
+  book_id: string;
+  score: number;
+  created_at: string;
+}
+
 export default async function ProfilePage({
   params,
 }: {
@@ -41,14 +47,12 @@ export default async function ProfilePage({
     isFollowingProfile = !!followData;
   }
 
-  // Get ratings for this user (including created_at for sorting)
+  // Get ratings for this user using RPC to bypass RLS
   const { data: userRatings } = await supabase
-    .from("ratings")
-    .select("book_id, score, created_at")
-    .eq("user_id", id);
+    .rpc("get_user_ratings", { target_user_id: id }) as { data: UserRating[] | null };
 
   const ratingMap = new Map(
-    (userRatings ?? []).map((r) => [r.book_id, { score: r.score, createdAt: r.created_at }])
+    (userRatings ?? []).map((r: UserRating) => [r.book_id, { score: r.score, createdAt: r.created_at }])
   );
 
   const ratedBooks = allBooks.filter((b) => ratingMap.has(b.id));
