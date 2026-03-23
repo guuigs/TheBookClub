@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { Button, Avatar, useToast } from "@/components/ui";
 import { useAuth } from "@/context/AuthContext";
 import { updateProfile, uploadAvatar } from "@/lib/db/profiles";
 import { createClient } from "@/lib/supabase/browser";
-import { Camera } from "lucide-react";
+import { Camera, Download, Trash2, AlertTriangle } from "lucide-react";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { profile, refreshProfile } = useAuth();
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -20,7 +22,33 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch("/api/user/export-data");
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `the-book-club-data-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Donnees exportees avec succes !");
+    } catch (error) {
+      toast.error("Erreur lors de l'export des donnees");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +221,55 @@ export default function SettingsPage() {
             </Button>
           </div>
         </form>
+
+        {/* RGPD Section */}
+        <section className="mt-16 pt-10 border-t border-cream">
+          <h2 className="text-t3 font-semibold text-dark mb-2">Vos donnees personnelles</h2>
+          <p className="text-body text-gray mb-6">
+            Conformement au RGPD, vous pouvez exporter ou supprimer vos donnees a tout moment.
+          </p>
+
+          <div className="flex flex-col gap-4">
+            {/* Export Data */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 bg-beige/30 rounded-lg">
+              <div>
+                <h3 className="text-body font-semibold text-dark">Exporter mes donnees</h3>
+                <p className="text-small text-gray">
+                  Telecharger une copie de toutes vos donnees au format JSON.
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleExportData}
+                isLoading={isExporting}
+                className="shrink-0"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+            </div>
+
+            {/* Delete Account */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 bg-red-50 rounded-lg border border-red-100">
+              <div>
+                <h3 className="text-body font-semibold text-dark">Supprimer mon compte</h3>
+                <p className="text-small text-gray">
+                  Cette action est irreversible. Toutes vos donnees seront supprimees.
+                </p>
+              </div>
+              <Button
+                variant="discrete"
+                size="sm"
+                onClick={() => setShowDeleteModal(true)}
+                className="shrink-0 !text-red-600 hover:!bg-red-100"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer
+              </Button>
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
@@ -200,6 +277,14 @@ export default function SettingsPage() {
       {/* Password Modal */}
       {showPasswordModal && (
         <PasswordChangeModal onClose={() => setShowPasswordModal(false)} />
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onClose={() => setShowDeleteModal(false)}
+          onDeleted={() => router.push("/")}
+        />
       )}
     </div>
   );
@@ -298,6 +383,102 @@ function PasswordChangeModal({ onClose }: { onClose: () => void }) {
             </Button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function DeleteAccountModal({
+  onClose,
+  onDeleted,
+}: {
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const toast = useToast();
+  const [confirmText, setConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (confirmText !== "SUPPRIMER") {
+      toast.error("Veuillez taper SUPPRIMER pour confirmer");
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch("/api/user/delete-account", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Delete failed");
+
+      toast.success("Compte supprime. Au revoir !");
+      onDeleted();
+    } catch (error) {
+      toast.error("Erreur lors de la suppression du compte");
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-5"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-modal-title"
+        className="bg-white rounded-xl p-8 w-full max-w-[450px] flex flex-col gap-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-red-100 rounded-full shrink-0">
+            <AlertTriangle className="w-6 h-6 text-red-600" />
+          </div>
+          <div>
+            <h2 id="delete-modal-title" className="font-display text-t2 text-dark tracking-tight">
+              Supprimer votre compte
+            </h2>
+            <p className="text-body text-gray mt-2">
+              Cette action est <strong>definitive et irreversible</strong>. Toutes vos
+              donnees seront supprimees : profil, notes, commentaires, listes et abonnements.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="confirmDelete" className="text-body font-medium text-dark">
+            Tapez <strong>SUPPRIMER</strong> pour confirmer
+          </label>
+          <input
+            id="confirmDelete"
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="SUPPRIMER"
+            className="px-4 py-3 border border-red-200 rounded-lg text-body focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+        </div>
+
+        <div className="flex gap-3 justify-end">
+          <Button type="button" variant="secondary" size="sm" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={handleDelete}
+            isLoading={isDeleting}
+            disabled={confirmText !== "SUPPRIMER"}
+            className="!bg-red-600 hover:!bg-red-700"
+          >
+            Supprimer definitivement
+          </Button>
+        </div>
       </div>
     </div>
   );

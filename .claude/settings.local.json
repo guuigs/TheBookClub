@@ -32,7 +32,18 @@
       "Bash(pip3 install:*)",
       "Bash(python3:*)",
       "Bash(python scripts/import_books.py)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(dir:*)",
+      "WebFetch(domain:the-book-club-one.vercel.app)",
+      "Bash(ls -la \"C:\\\\Users\\\\GTERRIER\\\\Desktop\\\\TheBookClub\\\\src\\\\app\"\" | grep -E \"terms)",
+      "Bash(privacy)",
+      "Bash(legal:*)",
+      "Bash(mentions)",
+      "Bash(cgu)",
+      "Bash(cgv)",
+      "Bash(confidentialite)",
+      "Bash(cookies)",
+      "Bash(rgpd \")"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -30,7 +30,12 @@ const mediamoure = localFont({
 
 export const metadata: Metadata = {
   title: "The Book Club",
-  description: "Votre communauté de lecteurs passionnés",
+  description: "Votre communaute de lecteurs passionnes",
+  icons: {
+    icon: "/images/icon.svg",
+    shortcut: "/images/icon.svg",
+    apple: "/images/icon.svg",
+  },
 };
 
 export default async function RootLayout({
