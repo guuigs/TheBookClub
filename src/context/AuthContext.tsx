@@ -137,21 +137,23 @@ export function AuthProvider({
     username: string,
     displayName: string
   ): Promise<{ error: string | null }> => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    // Pass username and display_name via user_metadata
+    // The database trigger will use these to create the profile
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+          display_name: displayName,
+        },
+      },
+    })
     if (error) return { error: error.message }
     if (!data.user) return { error: 'Erreur lors de la création du compte.' }
 
-    // Use upsert to handle both cases:
-    // 1. If trigger already created the profile, update it with user's chosen username/display_name
-    // 2. If no trigger exists, insert the profile
-    const { error: profileError } = await supabase.from('profiles').upsert({
-      id: data.user.id,
-      username,
-      display_name: displayName,
-    }, {
-      onConflict: 'id',
-    })
-    if (profileError) return { error: profileError.message }
+    // Profile is created automatically by the database trigger
+    // No need to insert/upsert here - it would fail due to RLS anyway
 
     return { error: null }
   }
