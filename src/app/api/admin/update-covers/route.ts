@@ -99,9 +99,19 @@ export async function POST() {
     const bestUrl = await getBestCoverFromApi(volumeId)
 
     if (!bestUrl) {
-      // No real cover available - this book only has placeholder
-      results.failed++
-      results.details.push({ id: book.id, title: book.title, status: 'no_real_cover' })
+      // No real cover available - set to null so generated cover is used
+      const { error: nullError } = await supabase
+        .from('books')
+        .update({ cover_url: null })
+        .eq('id', book.id)
+
+      if (nullError) {
+        results.failed++
+        results.details.push({ id: book.id, title: book.title, status: 'null_update_failed' })
+      } else {
+        results.updated++
+        results.details.push({ id: book.id, title: book.title, status: 'set_to_generated' })
+      }
       continue
     }
 

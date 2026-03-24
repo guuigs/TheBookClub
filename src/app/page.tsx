@@ -149,43 +149,58 @@ export default function Home() {
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
-        <section className="relative h-[600px] w-full overflow-hidden" aria-label="Présentation">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            aria-hidden="true"
-            style={{
-              backgroundImage: "url('/images/homepage-herosection-background.png')",
-            }}
-          >
-            <div className="absolute inset-0 bg-black/30" />
+        <section className="flex flex-col items-center px-5 pt-8 tablet:pt-12 desktop:pt-16" aria-label="Présentation">
+          {/* Title + Stars */}
+          <div className="flex flex-col items-center gap-5 tablet:gap-6 desktop:gap-7 mb-10 tablet:mb-12 desktop:mb-[60px]">
+            <h1 className="text-[28px] tablet:text-[36px] desktop:text-[48px] font-semibold text-dark tracking-[-0.02em] text-center">
+              vos livres, vos avis
+            </h1>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <svg
+                  key={i}
+                  className="w-5 h-5 tablet:w-6 tablet:h-6 desktop:w-[30px] desktop:h-[30px] text-primary"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              ))}
+            </div>
           </div>
 
-          <div className="relative h-full flex flex-col items-center justify-center text-white px-5">
-            <p className="font-display italic text-body tablet:text-t4 mb-6">
-              since 2026
-            </p>
-            <Image src="/images/logo.svg" alt="The Book Club" width={220} height={142} className="object-contain invert" priority />
-            <p className="font-display italic text-body tablet:text-t4 mt-6">
-              your books, your reviews
-            </p>
+          {/* Image with Search Bar - respects 3 widths */}
+          <div className="relative w-[320px] tablet:w-[700px] desktop:w-[1200px] h-[200px] tablet:h-[300px] desktop:h-[400px] rounded-lg overflow-hidden">
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              aria-hidden="true"
+              style={{
+                backgroundImage: "url('/images/homepage-herosection-background.png')",
+              }}
+            >
+              <div className="absolute inset-0 bg-black/20" />
+            </div>
+
+            {/* Search Bar centered in image */}
+            <div className="relative h-full flex items-center justify-center px-5">
+              <form onSubmit={handleSearch} className="w-full max-w-[280px] tablet:max-w-[400px] desktop:max-w-[517px]">
+                <div className="relative flex items-center gap-2 bg-[#f0f0f0] border border-[#d5d5d5] rounded-lg px-5 py-3 tablet:py-4">
+                  <Search className="w-5 h-5 text-gray shrink-0" aria-hidden="true" />
+                  <input
+                    type="text"
+                    aria-label="Rechercher un livre"
+                    placeholder="Rechercher un livre..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 bg-transparent text-dark placeholder:text-[#a7a7a7] text-body tablet:text-[18px] font-semibold tracking-tight focus:outline-none"
+                  />
+                </div>
+              </form>
+            </div>
           </div>
         </section>
 
         <div className="flex flex-col items-center gap-[60px] tablet:gap-[80px] py-[40px] tablet:py-[60px]">
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
-            <div className="relative">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray" aria-hidden="true" />
-              <input
-                type="text"
-                aria-label="Rechercher un livre"
-                placeholder="Rechercher un livre..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-5 py-3 bg-gray/10 text-dark placeholder:text-gray border border-gray/20 rounded-lg text-body tracking-tight focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-          </form>
 
           {/* Popular Books */}
           {popularBooks.length > 0 && (

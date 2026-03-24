@@ -95,34 +95,62 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 flex items-center justify-center px-5 py-20">
-        <div className="w-full max-w-[400px]">
-          <div className="flex flex-col items-center gap-2 mb-10">
-            <span className="font-display text-lg text-dark">The</span>
-            <span className="font-sans font-normal text-[48px] text-dark leading-none tracking-tight">
-              BOOK
-            </span>
-            <span className="font-display text-lg text-dark">Club</span>
+      <main className="flex-1 flex">
+        {/* Left side - Image with Logo (hidden on mobile) */}
+        <div className="hidden tablet:flex tablet:w-1/2 relative">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            aria-hidden="true"
+            style={{
+              backgroundImage: "url('/images/homepage-herosection-background.png')",
+            }}
+          >
+            <div className="absolute inset-0 bg-black/40" />
           </div>
 
-          <h1 className="text-t2 font-semibold text-dark text-center mb-8">
-            Connexion
-          </h1>
+          {/* Logo centered */}
+          <div className="relative flex-1 flex flex-col items-center justify-center text-white px-10">
+            <p className="font-display italic text-body mb-4 tracking-wide">
+              since 2026
+            </p>
+            <div className="flex flex-col items-center gap-2">
+              <span className="font-display text-xl">The</span>
+              <span className="font-sans font-normal text-[64px] desktop:text-[72px] leading-none tracking-tight">
+                BOOK
+              </span>
+              <span className="font-display text-xl">Club</span>
+            </div>
+            <p className="font-display italic text-body mt-4 tracking-wide">
+              your books, your reviews
+            </p>
+          </div>
+        </div>
 
-          <Suspense fallback={null}>
-            <LoginForm />
-          </Suspense>
+        {/* Right side - Form */}
+        <div className="w-full tablet:w-1/2 flex items-center justify-center px-5 py-10 tablet:py-20 bg-white">
+          <div className="w-full max-w-[335px]">
+            {/* Logo for mobile only */}
+            <div className="flex tablet:hidden flex-col items-center gap-1 mb-8">
+              <span className="font-display text-sm text-dark">The</span>
+              <span className="font-sans font-normal text-[36px] text-dark leading-none tracking-tight">
+                BOOK
+              </span>
+              <span className="font-display text-sm text-dark">Club</span>
+            </div>
 
-          <div className="mt-8 text-center">
-            <p className="text-body text-gray">
-              Pas encore membre ?{" "}
-              <Link href="/register" className="text-primary font-medium hover:underline">
+            <Suspense fallback={null}>
+              <LoginForm />
+            </Suspense>
+
+            <div className="mt-8 flex items-center justify-center gap-2">
+              <span className="text-small text-gray">Pas encore membre ?</span>
+              <Link href="/register" className="text-small text-primary font-medium hover:underline">
                 Rejoindre le club
               </Link>
-            </p>
+            </div>
           </div>
         </div>
       </main>

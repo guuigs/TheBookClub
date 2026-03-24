@@ -107,15 +107,8 @@ export async function POST(request: NextRequest) {
   const authorsRaw: string[] = volumeInfo.authors ?? []
   const genre: string | null = volumeInfo.categories?.join(', ') ?? null
   const rawDescription: string | null = volumeInfo.description ?? null
-  const coverUrl = await getBestCover(volumeInfo.imageLinks)
-
-  // Validation 1: Cover required
-  if (!coverUrl) {
-    return NextResponse.json(
-      { error: "Ce livre n'a pas de couverture disponible." },
-      { status: 400 }
-    )
-  }
+  // Get cover URL if available (null if no real cover exists)
+  const coverUrl = getBestCover(volumeInfo.imageLinks)
 
   // Clean description from HTML tags
   const description = rawDescription ? stripHtmlTags(rawDescription) : null
