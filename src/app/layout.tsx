@@ -5,6 +5,7 @@ import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider, AuthRequiredModal, CookieConsent } from "@/components/ui";
+import { Analytics } from "@vercel/analytics/react";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -79,6 +80,7 @@ export default async function RootLayout({
             <AuthRequiredModal />
             <CookieConsent />
           </ToastProvider>
+          <Analytics />
         </AuthProvider>
       </body>
     </html>

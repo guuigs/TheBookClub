@@ -45,7 +45,15 @@
       "Bash(cookies)",
       "Bash(rgpd \")",
       "WebFetch(domain:github.com)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(tree:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:www.googleapis.com)",
+      "Bash(timeout:*)",
+      "Bash(taskkill /PID 5364 /F)",
+      "Bash(powershell -Command:*)",
+      "Bash(echo:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   const query = queryParts.join('+')
 
   const res = await fetch(
-    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=12`
+    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&langRestrict=fr&maxResults=12`
   )
 
   if (!res.ok) {

@@ -80,12 +80,20 @@ export default function MentionsLegalesPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="font-display text-t2 text-dark mb-4">5. Cookies</h2>
-              <p className="text-body text-gray">
+              <h2 className="font-display text-t2 text-dark mb-4">5. Cookies et Analytics</h2>
+              <p className="text-body text-gray mb-4">
                 Ce site utilise des cookies essentiels au fonctionnement du service.
+                Nous utilisons egalement Vercel Analytics pour collecter des statistiques
+                anonymisees d&apos;utilisation du site.
+              </p>
+              <p className="text-body text-gray">
                 Pour en savoir plus, consultez notre{" "}
                 <a href="/cookies" className="text-primary underline hover:opacity-80">
                   politique relative aux cookies
+                </a>{" "}
+                et notre{" "}
+                <a href="/privacy" className="text-primary underline hover:opacity-80">
+                  politique de confidentialite
                 </a>.
               </p>
             </section>

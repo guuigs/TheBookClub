@@ -1,32 +1,67 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// Check if an image URL returns a valid image
-async function isImageUrlValid(url: string): Promise<boolean> {
-  try {
-    const response = await fetch(url, { method: 'HEAD' })
-    if (!response.ok) return false
-    const contentType = response.headers.get('content-type')
-    return contentType?.startsWith('image/') ?? false
-  } catch {
-    return false
-  }
+/**
+ * Extract volume ID from a Google Books cover URL
+ * Example: https://books.google.com/books/content?id=XXX&printsec=frontcover...
+ */
+function extractVolumeId(coverUrl: string): string | null {
+  const match = coverUrl.match(/[?&]id=([^&]+)/)
+  return match ? match[1] : null
 }
 
-// Find the best zoom level for a cover URL
-async function findBestZoom(coverUrl: string): Promise<string | null> {
-  // Try zoom levels from 6 (highest) down to 0 (lowest)
-  for (let zoom = 6; zoom >= 0; zoom--) {
-    const testUrl = coverUrl.replace(/zoom=\d/, `zoom=${zoom}`)
-    if (await isImageUrlValid(testUrl)) {
-      return testUrl
+/**
+ * Get the best available cover URL from Google Books API.
+ * Returns null if no real cover exists (only placeholder available).
+ */
+async function getBestCoverFromApi(volumeId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes/${volumeId}`)
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const imageLinks = data.volumeInfo?.imageLinks
+
+    if (!imageLinks) return null
+
+    // Priority order: highest quality first
+    // These keys only exist when a real cover is available
+    const qualityKeys = ['extraLarge', 'large', 'medium', 'small'] as const
+
+    for (const key of qualityKeys) {
+      if (imageLinks[key]) {
+        return imageLinks[key]
+          .replace(/^http:\/\//, 'https://')
+          .replace(/&edge=curl/, '')
+      }
     }
+
+    // If only thumbnail/smallThumbnail exist, this is a placeholder
+    return null
+  } catch {
+    return null
   }
-  return null
 }
 
 export async function POST() {
   const supabase = await createClient()
+
+  // Vérifier l'authentification
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  }
+
+  // Vérifier que c'est un admin (badge = 'honor')
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('badge')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.badge !== 'honor') {
+    return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
+  }
 
   // Get all books with their cover URLs
   const { data: books, error } = await supabase
@@ -42,7 +77,7 @@ export async function POST() {
     updated: 0,
     failed: 0,
     skipped: 0,
-    details: [] as { id: string; title: string; status: string; newZoom?: number }[]
+    details: [] as { id: string; title: string; status: string }[]
   }
 
   for (const book of books) {
@@ -52,18 +87,23 @@ export async function POST() {
       continue
     }
 
-    // Find the best zoom level
-    const bestUrl = await findBestZoom(book.cover_url)
-
-    if (!bestUrl) {
-      results.failed++
-      results.details.push({ id: book.id, title: book.title, status: 'no_valid_zoom' })
+    // Extract volume ID from current cover URL
+    const volumeId = extractVolumeId(book.cover_url)
+    if (!volumeId) {
+      results.skipped++
+      results.details.push({ id: book.id, title: book.title, status: 'invalid_url' })
       continue
     }
 
-    // Extract the zoom level from the best URL
-    const zoomMatch = bestUrl.match(/zoom=(\d)/)
-    const newZoom = zoomMatch ? parseInt(zoomMatch[1]) : null
+    // Get the best cover from Google Books API
+    const bestUrl = await getBestCoverFromApi(volumeId)
+
+    if (!bestUrl) {
+      // No real cover available - this book only has placeholder
+      results.failed++
+      results.details.push({ id: book.id, title: book.title, status: 'no_real_cover' })
+      continue
+    }
 
     // Update if different
     if (bestUrl !== book.cover_url) {
@@ -77,11 +117,11 @@ export async function POST() {
         results.details.push({ id: book.id, title: book.title, status: 'update_failed' })
       } else {
         results.updated++
-        results.details.push({ id: book.id, title: book.title, status: 'updated', newZoom: newZoom ?? undefined })
+        results.details.push({ id: book.id, title: book.title, status: 'upgraded' })
       }
     } else {
       results.skipped++
-      results.details.push({ id: book.id, title: book.title, status: 'already_best', newZoom: newZoom ?? undefined })
+      results.details.push({ id: book.id, title: book.title, status: 'already_best' })
     }
   }
 

@@ -75,7 +75,7 @@ export default function BookPage({
 }) {
   const { id } = use(params);
   const toast = useToast();
-  const { requireAuth } = useAuth();
+  const { requireAuth, user } = useAuth();
 
   const [book, setBook] = useState<Book | null>(null);
   const [bookNotFound, setBookNotFound] = useState(false);
@@ -211,9 +211,13 @@ export default function BookPage({
   }, [id]);
 
   const performRatingChange = async (rating: number) => {
+    const { error } = await upsertRating(id, rating);
+    if (error) {
+      toast.error(error);
+      return;
+    }
     setMyRating(rating);
-    await upsertRating(id, rating);
-    toast.success(`Note de ${rating}/10 enregistree`);
+    toast.success(`Note de ${rating}/10 enregistrée`);
     const supabase = createClient();
     const { data } = await supabase
       .from("books_with_stats")
@@ -325,6 +329,8 @@ export default function BookPage({
                     value={myRating}
                     onChange={handleRatingChange}
                     size="md"
+                    disabled={!user}
+                    onDisabledClick={() => requireAuth(() => {})}
                   />
                 </div>
                 <div className="w-full h-px bg-gray/20" />

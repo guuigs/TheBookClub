@@ -1,44 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// Check if an image URL returns a valid image (HTTP 200)
-async function isImageUrlValid(url: string): Promise<boolean> {
-  try {
-    const response = await fetch(url, { method: 'HEAD' })
-    if (!response.ok) return false
-    const contentType = response.headers.get('content-type')
-    return contentType?.startsWith('image/') ?? false
-  } catch {
-    return false
-  }
-}
-
-// Try to find the best quality cover by testing zoom levels from 6 down to 0
-async function getBestCover(imageLinks: Record<string, string> | undefined): Promise<string | null> {
+/**
+ * Get the best available cover URL from Google Books imageLinks.
+ *
+ * Detection method: Google Books API only provides 'small', 'medium', 'large', 'extraLarge'
+ * keys when a real cover exists. If only 'thumbnail' and 'smallThumbnail' are present,
+ * the book has no cover (those URLs return "image not available" placeholders).
+ *
+ * This is 100% reliable and requires no additional HTTP requests.
+ */
+function getBestCover(imageLinks: Record<string, string> | undefined): string | null {
   if (!imageLinks) return null
 
-  // Get base URL from thumbnail or smallThumbnail
-  const baseUrl = imageLinks.thumbnail ?? imageLinks.smallThumbnail ?? null
-  if (!baseUrl) return null
+  // Priority order: highest quality first
+  // These keys only exist when a real cover is available
+  const qualityKeys = ['extraLarge', 'large', 'medium', 'small'] as const
 
-  // Clean the base URL
-  const cleanUrl = baseUrl
-    .replace(/^http:\/\//, 'https://')
-    .replace(/&edge=curl/, '')
-
-  // Try zoom levels from 6 (highest) down to 0 (lowest)
-  for (let zoom = 6; zoom >= 0; zoom--) {
-    const testUrl = cleanUrl.replace(/zoom=\d/, `zoom=${zoom}`)
-    if (await isImageUrlValid(testUrl)) {
-      return testUrl
+  for (const key of qualityKeys) {
+    if (imageLinks[key]) {
+      // Clean URL: use HTTPS and remove curl effect
+      return imageLinks[key]
+        .replace(/^http:\/\//, 'https://')
+        .replace(/&edge=curl/, '')
     }
   }
 
-  // If no zoom level works, try the original URL as-is
-  if (await isImageUrlValid(cleanUrl)) {
-    return cleanUrl
-  }
-
+  // If only thumbnail/smallThumbnail exist, this is a placeholder - no real cover
   return null
 }
 
@@ -91,6 +79,14 @@ function nameSimilarity(a: string, b: string): number {
 const quatriemeCouverturePattern = /4[eè]?me?\s*(?:de\s+)?couverture|quatri[eè]me\s+(?:de\s+)?couverture/i
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient()
+
+  // Authentification requise pour ajouter un livre
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Connexion requise pour ajouter un livre' }, { status: 401 })
+  }
+
   const { volumeId } = await request.json()
 
   if (!volumeId) {
@@ -151,8 +147,6 @@ export async function POST(request: NextRequest) {
 
   const buyLink: string | null =
     saleInfo.saleability === 'FOR_SALE' ? (saleInfo.buyLink ?? null) : null
-
-  const supabase = await createClient()
 
   // Helper: upsert a single author by name with 80% similarity matching
   async function upsertAuthor(name: string): Promise<string | null> {

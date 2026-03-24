@@ -144,7 +144,25 @@ export default function PrivacyPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="font-display text-t2 text-dark mb-4">9. Cookies</h2>
+              <h2 className="font-display text-t2 text-dark mb-4">9. Analytics</h2>
+              <p className="text-body text-gray mb-4">
+                Nous utilisons Vercel Analytics pour comprendre comment notre site est utilise.
+                Ce service collecte des donnees anonymisees sur :
+              </p>
+              <ul className="text-body text-gray space-y-2 list-disc pl-5 mb-4">
+                <li>Les pages visitees</li>
+                <li>Le temps passe sur le site</li>
+                <li>Le type d&apos;appareil et de navigateur</li>
+                <li>Le pays d&apos;origine (sans adresse IP precise)</li>
+              </ul>
+              <p className="text-body text-gray">
+                Ces donnees sont agregees et ne permettent pas de vous identifier personnellement.
+                Elles nous aident a ameliorer l&apos;experience utilisateur.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="font-display text-t2 text-dark mb-4">10. Cookies</h2>
               <p className="text-body text-gray">
                 Nous utilisons uniquement des cookies essentiels au fonctionnement du site.
                 Consultez notre{" "}
@@ -156,7 +174,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="font-display text-t2 text-dark mb-4">10. Reclamation</h2>
+              <h2 className="font-display text-t2 text-dark mb-4">11. Reclamation</h2>
               <p className="text-body text-gray">
                 Si vous estimez que vos droits ne sont pas respectes, vous pouvez
                 introduire une reclamation aupres de la CNIL (Commission Nationale

@@ -7,6 +7,8 @@ export interface InteractiveStarRatingProps {
   onChange: (rating: number) => void;
   size?: "sm" | "md" | "lg";
   className?: string;
+  disabled?: boolean;         // if true, clicking shows onDisabledClick instead of editing
+  onDisabledClick?: () => void; // called when disabled and user tries to interact
 }
 
 const STARS = 5;
@@ -26,9 +28,12 @@ export function InteractiveStarRating({
   onChange,
   size = "md",
   className = "",
+  disabled = false,
+  onDisabledClick,
 }: InteractiveStarRatingProps) {
   const [hoverRating, setHoverRating] = useState<number | null>(null);
-  const [isEditing, setIsEditing] = useState(value === null); // start in editing mode if unrated
+  // Only start in editing mode if unrated AND not disabled
+  const [isEditing, setIsEditing] = useState(value === null && !disabled);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { star: starSize, gap } = sizeMap[size];
@@ -53,23 +58,36 @@ export function InteractiveStarRating({
   }
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>, starIndex: number) => {
-    if (!isEditing) return;
+    if (disabled || !isEditing) return;
     setHoverRating(getRatingFromPosition(e, starIndex));
-  }, [isEditing]);
+  }, [isEditing, disabled]);
 
   const handleMouseLeave = useCallback(() => {
     setHoverRating(null);
   }, []);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>, starIndex: number) => {
+    // If disabled, show auth modal instead
+    if (disabled) {
+      onDisabledClick?.();
+      return;
+    }
     const rating = getRatingFromPosition(e, starIndex);
     onChange(rating);
     setIsEditing(false);
     setHoverRating(null);
-  }, [onChange]);
+  }, [onChange, disabled, onDisabledClick]);
 
   // Keyboard: arrow keys to adjust rating
   function handleKeyDown(e: React.KeyboardEvent) {
+    // If disabled, show auth modal on Enter/Space
+    if (disabled) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onDisabledClick?.();
+      }
+      return;
+    }
     if (!isEditing) {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsEditing(true); }
       return;
