@@ -50,7 +50,9 @@ export async function GET(request: NextRequest) {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const results = data.items.map((item: any) => {
+  const results = data.items
+  .filter((item: any) => item.volumeInfo?.language === 'fr')
+  .map((item: any) => {
     const v = item.volumeInfo ?? {}
     const rawCover =
       v.imageLinks?.thumbnail ?? v.imageLinks?.smallThumbnail ?? null
