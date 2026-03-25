@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 interface GoogleBooksVolume {
   id: string
@@ -35,27 +36,20 @@ interface BookSearchResult {
 
 /**
  * Get the best available cover URL from Google Books imageLinks.
- * Returns null if no cover exists at all.
+ * Returns null if only thumbnails exist (we prefer our generated covers over low-quality images).
  */
 function getBestCover(imageLinks: Record<string, string> | undefined): string | null {
   if (!imageLinks) return null
 
-  // Priority order: highest quality first, but accept thumbnails too
-  const qualityKeys = ['extraLarge', 'large', 'medium', 'small', 'thumbnail', 'smallThumbnail'] as const
+  // Only accept high quality covers - NO thumbnails
+  // If only thumbnail/smallThumbnail exist, return null to use our generated cover
+  const qualityKeys = ['extraLarge', 'large', 'medium', 'small'] as const
 
   for (const key of qualityKeys) {
     if (imageLinks[key]) {
-      // Clean URL and upgrade quality for thumbnails
-      let url = imageLinks[key]
+      return imageLinks[key]
         .replace(/^http:\/\//, 'https://')
         .replace(/&edge=curl/, '')
-
-      // Try to get higher resolution by modifying zoom parameter
-      if (key === 'thumbnail' || key === 'smallThumbnail') {
-        url = url.replace(/zoom=\d/, 'zoom=2')
-      }
-
-      return url
     }
   }
 
@@ -205,8 +199,11 @@ export async function POST() {
     return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
   }
 
+  // Use admin client for operations
+  const adminClient = createAdminClient()
+
   // Get all books without covers, with author info
-  const { data: books, error } = await supabase
+  const { data: books, error } = await adminClient
     .from('books')
     .select('id, title, author_id, authors(name)')
     .is('cover_url', null)
@@ -218,8 +215,8 @@ export async function POST() {
     }, { status: 500 })
   }
 
-  // DEBUG MODE: Only process first 5 books to see what's happening
-  const DEBUG_MODE = true
+  // DEBUG MODE: Set to false for production
+  const DEBUG_MODE = false
   const booksToProcess = DEBUG_MODE ? books.slice(0, 5) : books
 
   const results = {
@@ -250,7 +247,7 @@ export async function POST() {
     if (coverUrl) {
       // In debug mode, don't actually update the database
       if (!DEBUG_MODE) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await adminClient
           .from('books')
           .update({ cover_url: coverUrl })
           .eq('id', book.id)

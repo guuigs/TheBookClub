@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
  * Extract volume ID from a Google Books cover URL
@@ -24,8 +25,7 @@ async function getBestCoverFromApi(volumeId: string): Promise<string | null> {
 
     if (!imageLinks) return null
 
-    // Priority order: highest quality first
-    // These keys only exist when a real cover is available
+    // Only high quality - NO thumbnails (prefer generated covers over low-quality)
     const qualityKeys = ['extraLarge', 'large', 'medium', 'small'] as const
 
     for (const key of qualityKeys) {
@@ -36,7 +36,6 @@ async function getBestCoverFromApi(volumeId: string): Promise<string | null> {
       }
     }
 
-    // If only thumbnail/smallThumbnail exist, this is a placeholder
     return null
   } catch {
     return null
@@ -59,8 +58,11 @@ export async function POST() {
     return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
   }
 
+  // Use admin client for operations
+  const adminClient = createAdminClient()
+
   // Get all books with their cover URLs
-  const { data: books, error } = await supabase
+  const { data: books, error } = await adminClient
     .from('books')
     .select('id, title, cover_url')
 
@@ -96,7 +98,7 @@ export async function POST() {
 
     if (!bestUrl) {
       // No real cover available - set to null so generated cover is used
-      const { error: nullError } = await supabase
+      const { error: nullError } = await adminClient
         .from('books')
         .update({ cover_url: null })
         .eq('id', book.id)
@@ -113,7 +115,7 @@ export async function POST() {
 
     // Update if different
     if (bestUrl !== book.cover_url) {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await adminClient
         .from('books')
         .update({ cover_url: bestUrl })
         .eq('id', book.id)

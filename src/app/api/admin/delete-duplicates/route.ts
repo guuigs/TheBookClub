@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const ADMIN_EMAIL = 'guilhemtr@proton.me'
 
@@ -23,8 +24,11 @@ export async function POST() {
     return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
   }
 
+  // Use admin client for operations that need to bypass RLS
+  const adminClient = createAdminClient()
+
   // Find duplicate books (same title + author_id)
-  const { data: books, error: fetchError } = await supabase
+  const { data: books, error: fetchError } = await adminClient
     .from('books')
     .select('id, title, author_id, created_at')
     .order('created_at', { ascending: true })
@@ -69,38 +73,49 @@ export async function POST() {
 
     for (const deleteId of deleteIds) {
       try {
-        // First, update any references to point to the kept book
-        // Update ratings
-        await supabase
+        // 1. Delete ratings on duplicate (can't merge due to unique constraint user_id+book_id)
+        const { error: ratingsError } = await adminClient
           .from('ratings')
-          .update({ book_id: keepId })
+          .delete()
           .eq('book_id', deleteId)
 
-        // Update comments
-        await supabase
+        if (ratingsError) {
+          results.errors.push(`[${group.title}] Erreur ratings: ${ratingsError.message}`)
+        }
+
+        // 2. Delete comments on duplicate (keep comments on the main book)
+        const { error: commentsError } = await adminClient
           .from('comments')
-          .update({ book_id: keepId })
+          .delete()
           .eq('book_id', deleteId)
 
-        // Update book_list_items (might have duplicates, so delete instead)
-        await supabase
+        if (commentsError) {
+          results.errors.push(`[${group.title}] Erreur comments: ${commentsError.message}`)
+        }
+
+        // 3. Delete book_list_items
+        const { error: listItemsError } = await adminClient
           .from('book_list_items')
           .delete()
           .eq('book_id', deleteId)
 
-        // Now delete the duplicate book
-        const { error: deleteError } = await supabase
+        if (listItemsError) {
+          results.errors.push(`[${group.title}] Erreur list_items: ${listItemsError.message}`)
+        }
+
+        // 4. Now delete the duplicate book
+        const { error: deleteError } = await adminClient
           .from('books')
           .delete()
           .eq('id', deleteId)
 
         if (deleteError) {
-          results.errors.push(`Erreur suppression ${group.title}: ${deleteError.message}`)
+          results.errors.push(`[${group.title}] Erreur delete book: ${deleteError.message}`)
         } else {
           results.deleted++
         }
       } catch (err) {
-        results.errors.push(`Erreur ${group.title}: ${err instanceof Error ? err.message : 'Unknown'}`)
+        results.errors.push(`[${group.title}] Exception: ${err instanceof Error ? err.message : 'Unknown'}`)
       }
     }
 
@@ -129,8 +144,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
   }
 
+  // Use admin client
+  const adminClient = createAdminClient()
+
   // Find duplicate books
-  const { data: books, error: fetchError } = await supabase
+  const { data: books, error: fetchError } = await adminClient
     .from('books')
     .select('id, title, author_id, authors(name), created_at')
     .order('created_at', { ascending: true })

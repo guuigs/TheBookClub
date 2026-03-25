@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
-import { Shield, Search, RefreshCw, CheckCircle, XCircle, Loader2, Trash2, Eye } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
 
 const ADMIN_EMAIL = "guilhemtr@proton.me";
@@ -41,7 +41,6 @@ interface DuplicatePreview {
   title: string;
   author: string;
   count: number;
-  ids: string[];
 }
 
 interface DuplicatesResponse {
@@ -57,390 +56,294 @@ interface DeleteDuplicatesResponse {
   errors: string[];
 }
 
+type ActiveTask = "none" | "findCovers" | "updateCovers" | "previewDuplicates" | "deleteDuplicates";
+
 export default function AdminPage() {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<FindCoversResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [activeTask, setActiveTask] = useState<ActiveTask>("none");
+  const [coversResult, setCoversResult] = useState<FindCoversResponse | null>(null);
   const [duplicatesPreview, setDuplicatesPreview] = useState<DuplicatesResponse | null>(null);
   const [duplicatesResult, setDuplicatesResult] = useState<DeleteDuplicatesResponse | null>(null);
-  const [isLoadingDuplicates, setIsLoadingDuplicates] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Check authorization on mount
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-
       if (!user || user.email !== ADMIN_EMAIL) {
-        // Redirect to home without any indication this page exists
         router.replace("/");
         return;
       }
-
       setIsAuthorized(true);
     };
-
     checkAuth();
   }, [router]);
 
-  const handleFindCovers = async () => {
-    setIsLoading(true);
+  const resetState = () => {
     setError(null);
-    setResults(null);
+    setCoversResult(null);
+    setDuplicatesPreview(null);
+    setDuplicatesResult(null);
+  };
 
+  const handleFindCovers = async () => {
+    resetState();
+    setActiveTask("findCovers");
     try {
-      const response = await fetch("/api/admin/find-covers", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erreur lors de la recherche");
-      }
-
-      const data: FindCoversResponse = await response.json();
-      setResults(data);
+      const res = await fetch("/api/admin/find-covers", { method: "POST" });
+      if (!res.ok) throw new Error((await res.json()).error || "Erreur");
+      setCoversResult(await res.json());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
-      setIsLoading(false);
+      setActiveTask("none");
     }
   };
 
   const handleUpdateCovers = async () => {
-    setIsLoading(true);
-    setError(null);
-    setResults(null);
-
+    resetState();
+    setActiveTask("updateCovers");
     try {
-      const response = await fetch("/api/admin/update-covers", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erreur lors de la mise à jour");
-      }
-
-      const data = await response.json();
-      setResults({
-        total: data.total,
+      const res = await fetch("/api/admin/update-covers", { method: "POST" });
+      if (!res.ok) throw new Error((await res.json()).error || "Erreur");
+      const data = await res.json();
+      setCoversResult({
         found: data.updated,
         notFound: data.skipped + data.failed,
+        processed: data.total,
         details: data.details,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
-      setIsLoading(false);
+      setActiveTask("none");
     }
   };
 
   const handlePreviewDuplicates = async () => {
-    setIsLoadingDuplicates(true);
-    setError(null);
-    setDuplicatesPreview(null);
-    setDuplicatesResult(null);
-
+    resetState();
+    setActiveTask("previewDuplicates");
     try {
-      const response = await fetch("/api/admin/delete-duplicates");
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erreur lors de la recherche");
-      }
-
-      const data: DuplicatesResponse = await response.json();
-      setDuplicatesPreview(data);
+      const res = await fetch("/api/admin/delete-duplicates");
+      if (!res.ok) throw new Error((await res.json()).error || "Erreur");
+      setDuplicatesPreview(await res.json());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
-      setIsLoadingDuplicates(false);
+      setActiveTask("none");
     }
   };
 
   const handleDeleteDuplicates = async () => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer tous les doublons ? Cette action est irréversible.")) {
-      return;
-    }
-
-    setIsLoadingDuplicates(true);
+    if (!confirm("Supprimer tous les doublons ? Cette action est irréversible.")) return;
+    setActiveTask("deleteDuplicates");
     setError(null);
-    setDuplicatesResult(null);
-
     try {
-      const response = await fetch("/api/admin/delete-duplicates", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erreur lors de la suppression");
-      }
-
-      const data: DeleteDuplicatesResponse = await response.json();
-      setDuplicatesResult(data);
+      const res = await fetch("/api/admin/delete-duplicates", { method: "POST" });
+      if (!res.ok) throw new Error((await res.json()).error || "Erreur");
+      setDuplicatesResult(await res.json());
       setDuplicatesPreview(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
-      setIsLoadingDuplicates(false);
+      setActiveTask("none");
     }
   };
 
-  // Show nothing while checking auth (prevents flash)
-  if (isAuthorized === null) {
-    return null;
-  }
+  if (isAuthorized === null || !isAuthorized) return null;
 
-  // Should not reach here if not authorized (redirect happens), but just in case
-  if (!isAuthorized) {
-    return null;
-  }
+  const isLoading = activeTask !== "none";
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
       <main className="flex-1 w-[320px] tablet:w-[700px] desktop:w-[1200px] mx-auto py-10 desktop:py-[80px]">
-        <div className="flex items-center gap-3 mb-8">
-          <Shield className="w-8 h-8 text-primary" />
-          <h1 className="text-t2 font-semibold text-dark tracking-tight">
-            Administration
-          </h1>
-        </div>
+        <h1 className="text-t2 font-semibold text-dark tracking-tight mb-8">
+          Administration
+        </h1>
 
-        <div className="grid gap-6">
-          {/* Find Covers Section */}
-          <section className="p-6 bg-gray/5 rounded-xl border border-gray/10">
-            <h2 className="text-t4 font-semibold text-dark mb-2">
-              Rechercher des covers manquantes
-            </h2>
-            <p className="text-body text-gray mb-4">
-              Recherche sur Google Books les covers pour les livres qui n&apos;en ont pas.
-              Priorité aux résultats en français.
+        {/* Actions */}
+        <div className="grid tablet:grid-cols-2 gap-4 mb-8">
+          {/* Covers Actions */}
+          <div className="p-6 bg-gray/5 rounded-xl">
+            <h2 className="text-t4 font-semibold text-dark mb-2">Covers</h2>
+            <p className="text-small text-gray mb-4">
+              Rechercher des covers haute qualité sur Google Books.
             </p>
-            <Button
-              variant="primary"
-              onClick={handleFindCovers}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <Search className="w-5 h-5 mr-2" />
-              )}
-              Rechercher les covers
-            </Button>
-          </section>
-
-          {/* Update Covers Section */}
-          <section className="p-6 bg-gray/5 rounded-xl border border-gray/10">
-            <h2 className="text-t4 font-semibold text-dark mb-2">
-              Mettre à jour les covers existantes
-            </h2>
-            <p className="text-body text-gray mb-4">
-              Vérifie et met à jour les covers existantes vers une meilleure qualité
-              si disponible sur Google Books.
-            </p>
-            <Button
-              variant="secondary"
-              onClick={handleUpdateCovers}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="w-5 h-5 mr-2" />
-              )}
-              Mettre à jour les covers
-            </Button>
-          </section>
-
-          {/* Delete Duplicates Section */}
-          <section className="p-6 bg-red-50/50 rounded-xl border border-red-200/50">
-            <h2 className="text-t4 font-semibold text-dark mb-2">
-              Supprimer les doublons
-            </h2>
-            <p className="text-body text-gray mb-4">
-              Recherche et supprime les livres en double (même titre + même auteur).
-              Les notes et commentaires sont conservés sur le livre restant.
-            </p>
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                onClick={handlePreviewDuplicates}
-                disabled={isLoadingDuplicates}
-              >
-                {isLoadingDuplicates ? (
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <Eye className="w-5 h-5 mr-2" />
-                )}
-                Prévisualiser
-              </Button>
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="primary"
-                onClick={handleDeleteDuplicates}
-                disabled={isLoadingDuplicates || !duplicatesPreview}
-                className="bg-red-600 hover:bg-red-700"
+                size="sm"
+                onClick={handleFindCovers}
+                disabled={isLoading}
               >
-                {isLoadingDuplicates ? (
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <Trash2 className="w-5 h-5 mr-2" />
-                )}
-                Supprimer les doublons
+                {activeTask === "findCovers" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Chercher covers manquantes
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleUpdateCovers}
+                disabled={isLoading}
+              >
+                {activeTask === "updateCovers" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Améliorer existantes
               </Button>
             </div>
+          </div>
 
-            {/* Duplicates Preview */}
-            {duplicatesPreview && (
-              <div className="mt-4 p-4 bg-white rounded-lg border border-gray/10">
-                <p className="text-body font-medium text-dark mb-3">
-                  {duplicatesPreview.totalDuplicateGroups} groupe(s) de doublons trouvé(s)
-                  ({duplicatesPreview.totalDuplicateBooks} livre(s) à supprimer)
-                </p>
-                <div className="max-h-[200px] overflow-y-auto">
-                  <ul className="space-y-1">
-                    {duplicatesPreview.duplicates.map((dup, i) => (
-                      <li key={i} className="text-small text-gray">
-                        <span className="font-medium text-dark">{dup.title}</span>
-                        {" "}par {dup.author} — {dup.count} exemplaires
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* Duplicates Result */}
-            {duplicatesResult && (
-              <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-body font-medium text-green-700">
-                  {duplicatesResult.deleted} doublon(s) supprimé(s) avec succès
-                </p>
-                {duplicatesResult.errors.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-small font-medium text-red-600">Erreurs :</p>
-                    <ul className="text-small text-red-600">
-                      {duplicatesResult.errors.map((err, i) => (
-                        <li key={i}>{err}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* Error Display */}
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-body font-medium text-red-700">{error}</p>
+          {/* Duplicates Actions */}
+          <div className="p-6 bg-gray/5 rounded-xl">
+            <h2 className="text-t4 font-semibold text-dark mb-2">Doublons</h2>
+            <p className="text-small text-gray mb-4">
+              Détecter et supprimer les livres en double.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handlePreviewDuplicates}
+                disabled={isLoading}
+              >
+                {activeTask === "previewDuplicates" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Analyser
+              </Button>
+              {duplicatesPreview && duplicatesPreview.totalDuplicateBooks > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleDeleteDuplicates}
+                  disabled={isLoading}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {activeTask === "deleteDuplicates" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Supprimer ({duplicatesPreview.totalDuplicateBooks})
+                </Button>
+              )}
             </div>
-          )}
+          </div>
+        </div>
 
-          {/* Results Display */}
-          {results && (
-            <section className="p-6 bg-gray/5 rounded-xl border border-gray/10">
-              <h2 className="text-t4 font-semibold text-dark mb-4">
-                Résultats
-                {results.debugMode && (
-                  <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-sm rounded">
-                    MODE DEBUG (5 premiers livres)
-                  </span>
-                )}
-              </h2>
+        {/* Error */}
+        {error && (
+          <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-body text-red-700">{error}</p>
+          </div>
+        )}
 
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="p-4 bg-white rounded-lg border border-gray/10 text-center">
-                  <p className="text-t3 font-semibold text-dark">
-                    {results.processed ?? results.total}
-                  </p>
-                  <p className="text-small text-gray">
-                    Analysés {results.totalBooksWithoutCover && `/ ${results.totalBooksWithoutCover} total`}
-                  </p>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200 text-center">
-                  <p className="text-t3 font-semibold text-green-700">{results.found}</p>
-                  <p className="text-small text-green-600">Covers trouvées</p>
-                </div>
-                <div className="p-4 bg-gray/5 rounded-lg border border-gray/10 text-center">
-                  <p className="text-t3 font-semibold text-gray">{results.notFound}</p>
-                  <p className="text-small text-gray">Non trouvées</p>
-                </div>
+        {/* Covers Results */}
+        {coversResult && (
+          <div className="mb-8">
+            <div className="flex items-center gap-4 mb-4">
+              <h2 className="text-t4 font-semibold text-dark">Résultats</h2>
+              {coversResult.debugMode && (
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                  Mode test
+                </span>
+              )}
+            </div>
+
+            <div className="flex gap-4 mb-6">
+              <div className="flex-1 p-4 bg-gray/5 rounded-lg text-center">
+                <p className="text-t3 font-semibold text-dark">{coversResult.processed ?? coversResult.details.length}</p>
+                <p className="text-small text-gray">Analysés</p>
               </div>
+              <div className="flex-1 p-4 bg-green-50 rounded-lg text-center">
+                <p className="text-t3 font-semibold text-green-700">{coversResult.found}</p>
+                <p className="text-small text-green-600">Trouvées</p>
+              </div>
+              <div className="flex-1 p-4 bg-gray/5 rounded-lg text-center">
+                <p className="text-t3 font-semibold text-gray">{coversResult.notFound}</p>
+                <p className="text-small text-gray">Non trouvées</p>
+              </div>
+            </div>
 
-              {/* Detailed Results with Debug Info */}
-              <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                {results.details.map((item) => (
-                  <div key={item.id} className="p-4 bg-white rounded-lg border border-gray/10">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-semibold text-dark">{item.title}</p>
-                        <p className="text-small text-gray">
-                          Auteur: {item.authorName ?? "Non trouvé"}
-                        </p>
-                      </div>
-                      {item.status === "cover_found" ? (
-                        <span className="flex items-center gap-1 text-small text-green-600">
-                          <CheckCircle className="w-4 h-4" />
-                          Cover trouvée
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-small text-red-500">
-                          <XCircle className="w-4 h-4" />
-                          Pas de cover
-                        </span>
-                      )}
+            <div className="max-h-[400px] overflow-y-auto space-y-2">
+              {coversResult.details.slice(0, 50).map((item) => (
+                <div
+                  key={item.id}
+                  className={`p-3 rounded-lg flex items-center justify-between ${
+                    item.status === "cover_found" || item.status === "upgraded"
+                      ? "bg-green-50"
+                      : "bg-gray/5"
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-body font-medium text-dark truncate">{item.title}</p>
+                    {item.authorName && (
+                      <p className="text-small text-gray">{item.authorName}</p>
+                    )}
+                  </div>
+                  <span className={`text-small font-medium ml-4 ${
+                    item.status === "cover_found" || item.status === "upgraded"
+                      ? "text-green-600"
+                      : "text-gray"
+                  }`}>
+                    {item.status === "cover_found" ? "Trouvée" :
+                     item.status === "upgraded" ? "Améliorée" :
+                     item.status === "no_cover_found" ? "Aucune" :
+                     item.status}
+                  </span>
+                </div>
+              ))}
+              {coversResult.details.length > 50 && (
+                <p className="text-small text-gray text-center py-2">
+                  ... et {coversResult.details.length - 50} autres
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Duplicates Preview */}
+        {duplicatesPreview && (
+          <div className="mb-8">
+            <h2 className="text-t4 font-semibold text-dark mb-4">
+              {duplicatesPreview.totalDuplicateGroups} groupe(s) de doublons
+              <span className="text-gray font-normal ml-2">
+                ({duplicatesPreview.totalDuplicateBooks} à supprimer)
+              </span>
+            </h2>
+
+            {duplicatesPreview.duplicates.length > 0 ? (
+              <div className="max-h-[300px] overflow-y-auto space-y-2">
+                {duplicatesPreview.duplicates.map((dup, i) => (
+                  <div key={i} className="p-3 bg-gray/5 rounded-lg flex items-center justify-between">
+                    <div>
+                      <p className="text-body font-medium text-dark">{dup.title}</p>
+                      <p className="text-small text-gray">{dup.author}</p>
                     </div>
-
-                    {item.coverUrl && (
-                      <div className="mb-2">
-                        <a
-                          href={item.coverUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-small text-primary underline break-all"
-                        >
-                          {item.coverUrl.substring(0, 80)}...
-                        </a>
-                      </div>
-                    )}
-
-                    {/* Debug Info */}
-                    {item.debugInfo && item.debugInfo.length > 0 && (
-                      <details className="mt-2">
-                        <summary className="text-small text-gray cursor-pointer hover:text-dark">
-                          Debug: {item.debugInfo.length} requêtes effectuées
-                        </summary>
-                        <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray/20">
-                          {item.debugInfo.map((debug, idx) => (
-                            <div key={idx} className="text-xs font-mono bg-gray/5 p-2 rounded">
-                              <p className="font-semibold">{debug.strategy}</p>
-                              <p className="text-gray break-all">{debug.url}</p>
-                              <p>
-                                Status: {debug.httpStatus ?? "N/A"} |
-                                Items: {debug.totalItems ?? 0} |
-                                Avec cover: {debug.itemsWithCovers}
-                                {debug.error && (
-                                  <span className="text-red-500"> | Erreur: {debug.error}</span>
-                                )}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </details>
-                    )}
+                    <span className="text-small font-medium text-primary">
+                      {dup.count} exemplaires
+                    </span>
                   </div>
                 ))}
               </div>
-            </section>
-          )}
-        </div>
+            ) : (
+              <p className="text-body text-gray">Aucun doublon trouvé.</p>
+            )}
+          </div>
+        )}
+
+        {/* Duplicates Result */}
+        {duplicatesResult && (
+          <div className={`p-4 rounded-lg ${
+            duplicatesResult.deleted > 0 ? "bg-green-50" : "bg-gray/5"
+          }`}>
+            <p className="text-body font-medium text-dark">
+              {duplicatesResult.deleted} doublon(s) supprimé(s)
+            </p>
+            {duplicatesResult.errors.length > 0 && (
+              <div className="mt-2 text-small text-red-600">
+                {duplicatesResult.errors.slice(0, 5).map((err, i) => (
+                  <p key={i}>{err}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <Footer />
