@@ -125,7 +125,8 @@ export async function POST() {
 
   for (const book of books) {
     // Get author name from the joined authors table
-    const authorData = book.authors as { name: string } | null
+    // Supabase returns single relation as object, but TypeScript sees it as array
+    const authorData = book.authors as unknown as { name: string } | null
     const authorName = authorData?.name ?? null
 
     // Search for cover on Google Books
