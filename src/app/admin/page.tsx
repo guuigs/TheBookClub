@@ -92,8 +92,9 @@ export default function AdminPage() {
     setActiveTask("findCovers");
     try {
       const res = await fetch("/api/admin/find-covers", { method: "POST" });
-      if (!res.ok) throw new Error((await res.json()).error || "Erreur");
-      setCoversResult(await res.json());
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setCoversResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
@@ -106,8 +107,8 @@ export default function AdminPage() {
     setActiveTask("updateCovers");
     try {
       const res = await fetch("/api/admin/update-covers", { method: "POST" });
-      if (!res.ok) throw new Error((await res.json()).error || "Erreur");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
       setCoversResult({
         found: data.updated,
         notFound: data.skipped + data.failed,
@@ -126,8 +127,9 @@ export default function AdminPage() {
     setActiveTask("previewDuplicates");
     try {
       const res = await fetch("/api/admin/delete-duplicates");
-      if (!res.ok) throw new Error((await res.json()).error || "Erreur");
-      setDuplicatesPreview(await res.json());
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setDuplicatesPreview(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {
@@ -141,8 +143,9 @@ export default function AdminPage() {
     setError(null);
     try {
       const res = await fetch("/api/admin/delete-duplicates", { method: "POST" });
-      if (!res.ok) throw new Error((await res.json()).error || "Erreur");
-      setDuplicatesResult(await res.json());
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur");
+      setDuplicatesResult(data);
       setDuplicatesPreview(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
