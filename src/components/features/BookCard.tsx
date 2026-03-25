@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MessageSquare } from "lucide-react";
-import { RatingStars } from "@/components/ui";
+import { RatingStars, BookPlaceholder } from "@/components/ui";
 import type { Book } from "@/types";
 
 export type BookCardVariant = "default" | "overlay" | "featured";
@@ -119,73 +119,6 @@ export function BookCard({
 }
 
 // Sub-components for cleaner code organization
-
-// Background images for generated covers (randomly selected based on title hash)
-const COVER_BACKGROUNDS = [
-  '/images/books/book-cover-1.jpg',
-  '/images/books/book-cover-2.jpg',
-  '/images/books/book-cover-3.jpg',
-];
-
-// Simple hash function to get consistent background per book
-function getBackgroundIndex(title: string): number {
-  let hash = 0;
-  for (let i = 0; i < title.length; i++) {
-    hash = ((hash << 5) - hash) + title.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash) % COVER_BACKGROUNDS.length;
-}
-
-function BookPlaceholder({ title, author, size }: { title: string; author?: string; size: BookCardSize }) {
-  const bgIndex = getBackgroundIndex(title);
-  const bgImage = COVER_BACKGROUNDS[bgIndex];
-
-  const titleSize = size === "xl" ? "text-xl" : size === "lg" ? "text-lg" : size === "md" ? "text-base" : "text-sm";
-  const authorSize = size === "xl" ? "text-base" : size === "lg" ? "text-sm" : "text-xs";
-  const padding = size === "xl" || size === "lg" ? "p-4" : "p-3";
-  const logoSize = size === "xl" || size === "lg" ? "w-8 h-8" : "w-6 h-6";
-
-  return (
-    <div className="absolute inset-0">
-      {/* Background Image */}
-      <Image
-        src={bgImage}
-        alt=""
-        fill
-        className="object-cover"
-        sizes="220px"
-      />
-      {/* Overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/20" />
-
-      {/* Content */}
-      <div className={`absolute inset-0 flex flex-col justify-between ${padding} text-white`}>
-        <div className="flex flex-col gap-2">
-          <p className={`font-semibold ${titleSize} leading-tight line-clamp-4 drop-shadow-md`}>
-            {title}
-          </p>
-          {author && (
-            <p className={`${authorSize} opacity-90 line-clamp-2 drop-shadow-md`}>
-              {author}
-            </p>
-          )}
-        </div>
-
-        {/* Logo */}
-        <div className="flex justify-center">
-          <Image
-            src="/images/logo.svg"
-            alt="The Book Club"
-            width={32}
-            height={32}
-            className={`${logoSize} object-contain invert opacity-80`}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function DefaultOverlay({ book, myRating }: { book: Book; myRating: number | null }) {
   return (

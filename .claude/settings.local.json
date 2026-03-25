@@ -43,7 +43,7 @@
       "Bash(cgv)",
       "Bash(confidentialite)",
       "Bash(cookies)",
-      "Bash(rgpd \")",
+      "Bash(rgpd)",
       "WebFetch(domain:github.com)",
       "Bash(npm audit:*)",
       "Bash(tree:*)",

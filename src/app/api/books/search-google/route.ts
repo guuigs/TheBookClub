@@ -34,25 +34,40 @@ export async function GET(request: NextRequest) {
   }
 
   const query = queryParts.join('+')
+  const apiUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&langRestrict=fr&maxResults=12`
 
-  const res = await fetch(
-    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&langRestrict=fr&maxResults=12`
-  )
+  console.log('[search-google] Fetching:', apiUrl)
 
-  if (!res.ok) {
-    return NextResponse.json({ results: [] })
+  let res: Response
+  try {
+    res = await fetch(apiUrl)
+  } catch (err) {
+    console.error('[search-google] Fetch failed:', err)
+    return NextResponse.json({ results: [], error: 'Network error' })
   }
 
-  const data = await res.json()
+  if (!res.ok) {
+    console.error('[search-google] Google Books API error:', res.status, res.statusText)
+    return NextResponse.json({ results: [], error: `API error: ${res.status}` })
+  }
+
+  let data: { items?: unknown[] }
+  try {
+    data = await res.json()
+  } catch (err) {
+    console.error('[search-google] JSON parse failed:', err)
+    return NextResponse.json({ results: [], error: 'Invalid response' })
+  }
+
+  console.log('[search-google] Got', data.items?.length ?? 0, 'items')
 
   if (!data.items?.length) {
     return NextResponse.json({ results: [] })
   }
 
+  // langRestrict=fr already filters by language at API level
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const results = data.items
-  .filter((item: any) => item.volumeInfo?.language === 'fr')
-  .map((item: any) => {
+  const results = data.items.map((item: any) => {
     const v = item.volumeInfo ?? {}
     const rawCover =
       v.imageLinks?.thumbnail ?? v.imageLinks?.smallThumbnail ?? null

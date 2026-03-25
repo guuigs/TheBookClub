@@ -6,7 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Lock, Globe } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
-import { Button, InteractiveStarRating, useToast } from "@/components/ui";
+import { Button, InteractiveStarRating, useToast, BookPlaceholder } from "@/components/ui";
 import {
   RatingBlock,
   CommentCard,
@@ -308,11 +308,7 @@ export default function BookPage({
                     priority
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cream to-gray/20">
-                    <p className="font-display text-lg text-dark text-center px-4 leading-tight">
-                      {book.title}
-                    </p>
-                  </div>
+                  <BookPlaceholder title={book.title} author={book.author?.name} size="xl" />
                 )}
               </div>
 

@@ -25,3 +25,6 @@ export { ToastProvider, useToast } from "./Toast";
 export { AuthRequiredModal } from "./AuthRequiredModal";
 
 export { CookieConsent } from "./CookieConsent";
+
+export { BookPlaceholder } from "./BookPlaceholder";
+export type { BookPlaceholderProps, BookPlaceholderSize } from "./BookPlaceholder";
