@@ -164,7 +164,7 @@ export function ListActions({
                   : `/listes/${listId}`}
               </span>
               <Button variant="primary" size="xs" onClick={handleCopyLink}>
-                {copied ? "Copie !" : "Copier"}
+                {copied ? "Copié !" : "Copier le lien"}
               </Button>
             </div>
             <div className="flex gap-3 justify-end">

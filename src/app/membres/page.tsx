@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, Plus, Minus, Users } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Users } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { MemberCard } from "@/components/features";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/browser";
 import type { User, MemberBadge } from "@/types";
 
-type SortOption = "popular" | "alpha";
+type SortOption = "recent" | "popular" | "alpha";
 type SortDirection = "asc" | "desc";
 type BadgeFilter = "all" | MemberBadge;
 type FollowFilter = "all" | "following";
@@ -21,7 +21,11 @@ const badgeFilterLabels: Record<BadgeFilter, string> = {
   member: "Membre du club",
 };
 
-function mapProfile(p: Record<string, unknown>): User {
+interface MemberWithRawDate extends User {
+  createdAtRaw: string;
+}
+
+function mapProfile(p: Record<string, unknown>): MemberWithRawDate {
   return {
     id: p.id as string,
     username: p.username as string,
@@ -32,6 +36,7 @@ function mapProfile(p: Record<string, unknown>): User {
     listsCount: Number(p.lists_count ?? 0),
     followersCount: Number(p.followers_count ?? 0),
     followingCount: Number(p.following_count ?? 0),
+    createdAtRaw: (p.created_at as string) ?? "",
     joinDate: p.created_at
       ? new Date(p.created_at as string).toLocaleDateString("fr-FR", {
           day: "numeric",
@@ -44,9 +49,9 @@ function mapProfile(p: Record<string, unknown>): User {
 
 export default function MembersPage() {
   const { user } = useAuth();
-  const [members, setMembers] = useState<User[]>([]);
+  const [members, setMembers] = useState<MemberWithRawDate[]>([]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [badgeFilter, setBadgeFilter] = useState<BadgeFilter>("all");
   const [followFilter, setFollowFilter] = useState<FollowFilter>("all");
@@ -81,6 +86,7 @@ export default function MembersPage() {
   }, [user]);
 
   const sortOptions: { value: SortOption; label: string }[] = [
+    { value: "recent", label: "Récent" },
     { value: "popular", label: "Populaire" },
     { value: "alpha", label: "A → Z" },
   ];
@@ -119,6 +125,9 @@ export default function MembersPage() {
     result.sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
+        case "recent":
+          comparison = new Date(b.createdAtRaw).getTime() - new Date(a.createdAtRaw).getTime();
+          break;
         case "popular":
           comparison = b.followersCount - a.followersCount;
           break;
@@ -186,9 +195,9 @@ export default function MembersPage() {
                 {option.label}
                 {sortBy === option.value &&
                   (sortDirection === "desc" ? (
-                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                    <ChevronDown className="w-4 h-4" aria-hidden="true" />
                   ) : (
-                    <Minus className="w-3.5 h-3.5" aria-hidden="true" />
+                    <ChevronUp className="w-4 h-4" aria-hidden="true" />
                   ))}
               </button>
             ))}

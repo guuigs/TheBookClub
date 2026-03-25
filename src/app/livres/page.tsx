@@ -40,7 +40,7 @@ function mapBookRow(row: any): BookWithDate {
 
 function BooksContent() {
   const searchParams = useSearchParams();
-  const initialSort = (searchParams.get("sort") as SortOption) || "popular";
+  const initialSort = (searchParams.get("sort") as SortOption) || "recent";
 
   const [books, setBooks] = useState<BookWithDate[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>(initialSort);

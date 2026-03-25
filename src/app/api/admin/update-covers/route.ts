@@ -43,6 +43,8 @@ async function getBestCoverFromApi(volumeId: string): Promise<string | null> {
   }
 }
 
+const ADMIN_EMAIL = 'guilhemtr@proton.me'
+
 export async function POST() {
   const supabase = await createClient()
 
@@ -52,14 +54,8 @@ export async function POST() {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   }
 
-  // Vérifier que c'est un admin (badge = 'honor')
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('badge')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.badge !== 'honor') {
+  // Strict admin check: only specific email allowed
+  if (user.email !== ADMIN_EMAIL) {
     return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
   }
 

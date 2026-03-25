@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { Plus as PlusIcon, Minus, Heart } from "lucide-react";
+import { Plus as PlusIcon, ChevronDown, ChevronUp, Heart } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { ListCard } from "@/components/features";
 import { Button } from "@/components/ui";
@@ -34,7 +34,7 @@ function ListsContent() {
   const { user } = useAuth();
   const [lists, setLists] = useState<BookList[]>([]);
   const [likedListIds, setLikedListIds] = useState<Set<string>>(new Set());
-  const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [activeFilter, setActiveFilter] = useState<ListFilter>("all");
 
@@ -152,9 +152,9 @@ function ListsContent() {
               {option.label}
               {sortBy === option.value &&
                 (sortDirection === "desc" ? (
-                  <PlusIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                  <ChevronDown className="w-4 h-4" aria-hidden="true" />
                 ) : (
-                  <Minus className="w-3.5 h-3.5" aria-hidden="true" />
+                  <ChevronUp className="w-4 h-4" aria-hidden="true" />
                 ))}
             </button>
           ))}

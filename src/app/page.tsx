@@ -152,7 +152,7 @@ export default function Home() {
         <section className="flex flex-col items-center px-5 pt-8 tablet:pt-12 desktop:pt-16" aria-label="Présentation">
           {/* Title + Stars */}
           <div className="flex flex-col items-center gap-5 tablet:gap-6 desktop:gap-7 mb-10 tablet:mb-12 desktop:mb-[60px]">
-            <h1 className="text-[28px] tablet:text-[36px] desktop:text-[48px] font-semibold text-dark tracking-[-0.02em] text-center">
+            <h1 className="text-[22px] tablet:text-[36px] desktop:text-[48px] font-semibold text-dark tracking-[-0.02em] text-center">
               vos livres, vos avis
             </h1>
             <div className="flex gap-1">

@@ -54,7 +54,8 @@
       "Bash(taskkill /PID 5364 /F)",
       "Bash(powershell -Command:*)",
       "Bash(echo:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(python:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -169,17 +169,58 @@ export default function RegisterPage() {
     acceptTerms;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main id="main-content" className="flex-1 flex items-center justify-center px-5 py-10">
-        <div className="w-full max-w-[400px]">
-          <h1 className="font-display text-t1 text-dark tracking-tight mb-4 text-center">
-            Rejoindre le Club
-          </h1>
-          <p className="text-body text-gray text-center mb-8">
-            Creez votre compte pour rejoindre notre communaute de lecteurs.
-          </p>
+      <main className="flex-1 flex min-h-[80vh]">
+        {/* Left side - Image with Logo (hidden on mobile) */}
+        <div className="hidden tablet:flex tablet:w-1/2 relative">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            aria-hidden="true"
+            style={{
+              backgroundImage: "url('/images/homepage-herosection-background.png')",
+            }}
+          >
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
+
+          {/* Logo centered */}
+          <div className="relative flex-1 flex flex-col items-center justify-center text-white px-10">
+            <p className="font-display italic text-body mb-4 tracking-wide">
+              since 2026
+            </p>
+            <div className="flex flex-col items-center gap-2">
+              <span className="font-display text-xl">The</span>
+              <span className="font-sans font-normal text-[64px] desktop:text-[72px] leading-none tracking-tight">
+                BOOK
+              </span>
+              <span className="font-display text-xl">Club</span>
+            </div>
+            <p className="font-display italic text-body mt-4 tracking-wide">
+              your books, your reviews
+            </p>
+          </div>
+        </div>
+
+        {/* Right side - Form */}
+        <div className="w-full tablet:w-1/2 flex items-center justify-center px-5 py-8 tablet:py-12 bg-white">
+          <div className="w-full max-w-[400px]">
+            {/* Logo for mobile only */}
+            <div className="flex tablet:hidden flex-col items-center gap-1 mb-6">
+              <span className="font-display text-sm text-dark">The</span>
+              <span className="font-sans font-normal text-[36px] text-dark leading-none tracking-tight">
+                BOOK
+              </span>
+              <span className="font-display text-sm text-dark">Club</span>
+            </div>
+
+            <h1 className="font-display text-t2 text-dark tracking-tight mb-2 text-center tablet:text-left">
+              Rejoindre le Club
+            </h1>
+            <p className="text-body text-gray text-center tablet:text-left mb-6">
+              Créez votre compte pour rejoindre notre communauté de lecteurs.
+            </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             {error && (
@@ -307,12 +348,13 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <p className="text-body text-gray text-center mt-8">
-            Deja membre ?{" "}
-            <Link href="/login" className="text-primary underline hover:opacity-80">
-              Se connecter
-            </Link>
-          </p>
+          <div className="mt-6 flex items-center justify-center gap-2">
+              <span className="text-small text-gray">Déjà membre ?</span>
+              <Link href="/login" className="text-small text-primary font-medium hover:underline">
+                Se connecter
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
 
