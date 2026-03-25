@@ -45,21 +45,22 @@ async function getBestCoverFromApi(volumeId: string): Promise<string | null> {
 const ADMIN_EMAIL = 'guilhemtr@proton.me'
 
 export async function POST() {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  // Vérifier l'authentification
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-  }
+    // Vérifier l'authentification
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
 
-  // Strict admin check: only specific email allowed
-  if (user.email !== ADMIN_EMAIL) {
-    return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
-  }
+    // Strict admin check: only specific email allowed
+    if (user.email !== ADMIN_EMAIL) {
+      return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
+    }
 
-  // Use admin client for operations
-  const adminClient = createAdminClient()
+    // Use admin client for operations
+    const adminClient = createAdminClient()
 
   // Get all books with their cover URLs
   const { data: books, error } = await adminClient
@@ -134,4 +135,11 @@ export async function POST() {
   }
 
   return NextResponse.json(results)
+  } catch (err) {
+    console.error('update-covers error:', err)
+    return NextResponse.json({
+      error: 'Erreur serveur',
+      details: err instanceof Error ? err.message : 'Unknown error'
+    }, { status: 500 })
+  }
 }

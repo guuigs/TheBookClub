@@ -11,21 +11,22 @@ interface DuplicateGroup {
 }
 
 export async function POST() {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  // Verify authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-  }
+    // Verify authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
 
-  // Strict admin check
-  if (user.email !== ADMIN_EMAIL) {
-    return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
-  }
+    // Strict admin check
+    if (user.email !== ADMIN_EMAIL) {
+      return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
+    }
 
-  // Use admin client for operations that need to bypass RLS
-  const adminClient = createAdminClient()
+    // Use admin client for operations that need to bypass RLS
+    const adminClient = createAdminClient()
 
   // Find duplicate books (same title + author_id)
   const { data: books, error: fetchError } = await adminClient
@@ -127,25 +128,33 @@ export async function POST() {
   }
 
   return NextResponse.json(results)
+  } catch (err) {
+    console.error('delete-duplicates POST error:', err)
+    return NextResponse.json({
+      error: 'Erreur serveur',
+      details: err instanceof Error ? err.message : 'Unknown error'
+    }, { status: 500 })
+  }
 }
 
 // GET method to preview duplicates without deleting
 export async function GET() {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  // Verify authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-  }
+    // Verify authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
 
-  // Strict admin check
-  if (user.email !== ADMIN_EMAIL) {
-    return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
-  }
+    // Strict admin check
+    if (user.email !== ADMIN_EMAIL) {
+      return NextResponse.json({ error: 'Accès admin requis' }, { status: 403 })
+    }
 
-  // Use admin client
-  const adminClient = createAdminClient()
+    // Use admin client
+    const adminClient = createAdminClient()
 
   // Find duplicate books
   const { data: books, error: fetchError } = await adminClient
@@ -186,4 +195,11 @@ export async function GET() {
     totalDuplicateBooks: duplicates.reduce((sum, d) => sum + d.count - 1, 0),
     duplicates
   })
+  } catch (err) {
+    console.error('delete-duplicates GET error:', err)
+    return NextResponse.json({
+      error: 'Erreur serveur',
+      details: err instanceof Error ? err.message : 'Unknown error'
+    }, { status: 500 })
+  }
 }

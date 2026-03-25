@@ -93,7 +93,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/find-covers", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur");
+      if (!res.ok) throw new Error(data.details || data.error || "Erreur");
       setCoversResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
@@ -108,7 +108,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/update-covers", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur");
+      if (!res.ok) throw new Error(data.details || data.error || "Erreur");
       setCoversResult({
         found: data.updated,
         notFound: data.skipped + data.failed,
@@ -128,7 +128,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/delete-duplicates");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur");
+      if (!res.ok) throw new Error(data.details || data.error || "Erreur");
       setDuplicatesPreview(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
@@ -144,7 +144,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/delete-duplicates", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur");
+      if (!res.ok) throw new Error(data.details || data.error || "Erreur");
       setDuplicatesResult(data);
       setDuplicatesPreview(null);
     } catch (err) {
