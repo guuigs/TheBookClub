@@ -65,6 +65,7 @@ function mapComment(row: any): Comment {
     createdAt: new Date(row.created_at),
     likesCount: Number(row.likes_count?.[0]?.count ?? 0),
     isLikedByCurrentUser: false,
+    parentId: row.parent_id ?? undefined,
   };
 }
 
@@ -85,6 +86,7 @@ export default function BookPage({
   const [isSynopsisExpanded, setIsSynopsisExpanded] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [myRating, setMyRating] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isPrivateComment, setIsPrivateComment] = useState(false);
@@ -137,6 +139,7 @@ export default function BookPage({
       });
 
     // Fetch public comments only (private comments are personal notes)
+    // Fetch top-level + replies together, then nest client-side
     supabase
       .from("comments")
       .select(
@@ -145,10 +148,22 @@ export default function BookPage({
       )
       .eq("book_id", id)
       .eq("is_private", false)
-      .order("created_at", { ascending: false })
-      .limit(10)
+      .order("created_at", { ascending: true })
       .then(({ data }) => {
-        if (data) setComments(data.map(mapComment));
+        if (!data) return;
+        const allComments = data.map(mapComment);
+        // Nest replies under their parent
+        const topLevel: Comment[] = [];
+        const byId = new Map<string, Comment>();
+        allComments.forEach(c => { byId.set(c.id, { ...c, replies: [] }); });
+        byId.forEach(c => {
+          if (c.parentId) {
+            byId.get(c.parentId)?.replies?.push(c);
+          } else {
+            topLevel.push(byId.get(c.id)!);
+          }
+        });
+        setComments(topLevel.reverse());
       });
 
     getUserRating(id).then(setMyRating);
@@ -392,13 +407,13 @@ export default function BookPage({
               <section className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-8">
                 {/* Col 1 : Auteur + Genre */}
                 <div className="flex flex-col gap-7">
-                  <div className="flex flex-col gap-1 items-start">
+                  <div className="flex flex-col gap-3 items-start">
                     <span className="text-body font-medium text-gray tracking-tight">Auteur</span>
                     <Link href={`/auteur/${book.author.id}`} className="text-body font-medium text-dark tracking-tight hover:text-primary transition-colors">
                       {book.author.name}
                     </Link>
                   </div>
-                  <div className="flex flex-col gap-1 items-start">
+                  <div className="flex flex-col gap-3 items-start">
                     <span className="text-body font-medium text-gray tracking-tight">Genre</span>
                     <span className="text-body font-medium text-dark tracking-tight">{book.genre}</span>
                   </div>
@@ -439,10 +454,10 @@ export default function BookPage({
                 </div>
 
                 {/* Col 3 : Librairies */}
-                <div className="flex flex-col gap-3 items-start">
+                <div className="flex flex-col gap-7 items-start">
                   <span className="text-body font-medium text-gray tracking-tight">Les librairies du club</span>
                   <p className="text-small font-medium text-gray tracking-tight leading-relaxed">
-                    Le Book Club est affilié à une série de librairies indépendantes partout en France.
+                    The Book Club est affilié à une série de librairies indépendantes partout en France.
                     Achetez vos livres là-bas et profitez d&apos;une réduction de 5% à l&apos;achat.
                   </p>
                   <Link href="/librairies">
@@ -645,11 +660,15 @@ export default function BookPage({
                 thebookclub.fr/livres/{book.id}
               </span>
               <Button
-                variant="primary"
+                variant={linkCopied ? "secondary" : "primary"}
                 size="xs"
-                onClick={() => navigator.clipboard.writeText(`thebookclub.fr/livres/${book.id}`)}
+                onClick={() => {
+                  navigator.clipboard.writeText(`thebookclub.fr/livres/${book.id}`);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 2000);
+                }}
               >
-                Copier
+                {linkCopied ? "Copié !" : "Copier"}
               </Button>
             </div>
             <div className="flex gap-3 justify-end">

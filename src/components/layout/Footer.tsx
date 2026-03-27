@@ -40,7 +40,7 @@ export function Footer() {
             {/* Support Message */}
             <div className="flex flex-col gap-4">
               <p className="text-small text-white/80 leading-relaxed">
-                Le Book Club est un projet independant. N&apos;hesitez pas a me
+                The Book Club est un projet independant. N&apos;hesitez pas a me
                 soutenir si vous le souhaitez.
               </p>
               <Link

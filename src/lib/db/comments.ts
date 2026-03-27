@@ -68,7 +68,8 @@ export async function getCommentsByBookId(
 export async function createComment(
   bookId: string,
   content: string,
-  isPrivate: boolean = false
+  isPrivate: boolean = false,
+  parentId?: string
 ): Promise<{ data: Comment | null; error: string | null }> {
   const supabase = createBrowserClient()
   const {
@@ -91,8 +92,9 @@ export async function createComment(
       user_id: user.id,
       content: content.slice(0, 2000),
       is_private: isPrivate,
+      ...(parentId ? { parent_id: parentId } : {}),
     })
-    .select('id, book_id, content, created_at, is_private')
+    .select('id, book_id, content, created_at, is_private, parent_id')
     .single()
 
   if (error || !insertedComment) {
@@ -119,6 +121,7 @@ export async function createComment(
     likesCount: 0,
     isLikedByCurrentUser: false,
     isPrivate: insertedComment.is_private,
+    parentId: insertedComment.parent_id ?? undefined,
   }
 
   return { data: comment, error: null }

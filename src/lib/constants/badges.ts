@@ -28,7 +28,7 @@ export const BADGE_CONFIG: Record<MemberBadge, BadgeConfig> = {
     icon: "/images/badges/benefactor.svg",
     label: "Membre bienfaiteur",
     description:
-      "Le bienfaiteur est reconnu pour avoir aide financierement le Book Club.",
+      "Le bienfaiteur est reconnu pour avoir aide financierement The Book Club.",
   },
   honor: {
     icon: "/images/badges/honor.svg",

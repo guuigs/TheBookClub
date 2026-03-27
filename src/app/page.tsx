@@ -70,7 +70,7 @@ export default function Home() {
          likes_count:comment_likes(count)`
       )
       .order("created_at", { ascending: false })
-      .limit(6);
+      .limit(4);
     if (commentsError) {
       console.error("[Homepage] Comments fetch error:", commentsError.message);
     } else if (commentsData) {
@@ -206,7 +206,7 @@ export default function Home() {
           {popularBooks.length > 0 && (
             <section className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
               <div className="flex flex-col gap-10">
-                <SectionHeader title="Livres populaires en ce moment" seeMoreHref="/livres" className="text-t3" />
+                <SectionHeader title="Livres populaires en ce moment" seeMoreHref="/livres" titleClassName="text-body desktop:text-t3" />
                 <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-5 justify-items-center">
                   {popularBooks.map((book) => (
                     <BookCard key={book.id} book={book} size="lg" showTitle showAuthor myRating={userRatings.get(book.id) ?? null} />
@@ -219,7 +219,7 @@ export default function Home() {
           {/* Comments */}
           <section className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
             <div className="flex flex-col gap-10">
-              <SectionHeader title="Les commentaires de la semaine" seeMoreHref="/comments" className="text-t3" />
+              <SectionHeader title="Les commentaires de la semaine" seeMoreHref="/comments" titleClassName="text-body desktop:text-t3" />
               {recentComments.length > 0 ? (
                 <div className="grid grid-cols-1 tablet:grid-cols-2 gap-5">
                   {recentComments.map(({ comment, book }) => (
@@ -235,7 +235,7 @@ export default function Home() {
           {/* Popular Lists */}
           <section className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
             <div className="flex flex-col gap-10">
-              <SectionHeader title="Listes populaires en ce moment" seeMoreHref="/listes" className="text-t3" />
+              <SectionHeader title="Listes populaires en ce moment" seeMoreHref="/listes" titleClassName="text-body desktop:text-t3" />
               {popularLists.length > 0 ? (
                 <div className="grid grid-cols-1 tablet:grid-cols-2 gap-5">
                   {popularLists.map((list) => (
@@ -252,7 +252,7 @@ export default function Home() {
           {featuredMembers.length > 0 && (
             <section className="w-[320px] tablet:w-[700px] desktop:w-[1200px]">
               <div className="flex flex-col gap-10">
-                <SectionHeader title="Les membres du club à suivre" seeMoreHref="/membres" className="text-t3" />
+                <SectionHeader title="Les membres du club à suivre" seeMoreHref="/membres" titleClassName="text-body desktop:text-t3" />
                 <div className="grid grid-cols-2 tablet:grid-cols-3 desktop:grid-cols-4 gap-5 justify-items-center">
                   {featuredMembers.map((member) => (
                     <MemberCard key={member.id} user={member} />

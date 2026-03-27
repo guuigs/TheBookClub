@@ -64,6 +64,8 @@ export interface Comment {
   likesCount: number;
   isLikedByCurrentUser?: boolean;
   isPrivate?: boolean;
+  parentId?: string;
+  replies?: Comment[];
 }
 
 // List

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, Pencil, Trash2, Check } from "lucide-react";
+import { Heart, Pencil, Trash2, Check, CornerDownRight } from "lucide-react";
 import { Avatar, RatingStars, Badge, Button } from "@/components/ui";
-import { toggleCommentLike, updateComment, deleteComment } from "@/lib/db/comments";
+import { toggleCommentLike, updateComment, deleteComment, createComment } from "@/lib/db/comments";
 import { useAuth } from "@/context/AuthContext";
 import { formatDate } from "@/lib/utils/format";
 import type { Comment } from "@/types";
@@ -17,6 +17,8 @@ export interface CommentCardProps {
   className?: string;
   onDeleted?: () => void;
   onUpdated?: (newContent: string) => void;
+  onReplyAdded?: (reply: Comment) => void;
+  isReply?: boolean;
 }
 
 export function CommentCard({
@@ -27,6 +29,8 @@ export function CommentCard({
   className = "",
   onDeleted,
   onUpdated,
+  onReplyAdded,
+  isReply = false,
 }: CommentCardProps) {
   const { user } = useAuth();
   const isOwner = user?.id === comment.user.id;
@@ -46,7 +50,26 @@ export function CommentCard({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Reply state
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [localReplies, setLocalReplies] = useState<Comment[]>(comment.replies ?? []);
+
   const formattedDate = formatDate(comment.createdAt);
+
+  const handleSubmitReply = async () => {
+    if (!replyText.trim() || isSubmittingReply) return;
+    setIsSubmittingReply(true);
+    const { data: newReply, error } = await createComment(comment.bookId, replyText.trim(), false, comment.id);
+    if (!error && newReply) {
+      setLocalReplies(prev => [...prev, newReply]);
+      onReplyAdded?.(newReply);
+      setReplyText("");
+      setShowReplyForm(false);
+    }
+    setIsSubmittingReply(false);
+  };
 
   const handleLike = async () => {
     if (isLiking) return;
@@ -221,6 +244,18 @@ export function CommentCard({
             </span>
           </button>
 
+          {!isReply && user && (
+            <button
+              type="button"
+              onClick={() => setShowReplyForm(!showReplyForm)}
+              className="flex items-center gap-1 text-gray hover:text-dark transition-colors"
+              aria-label="Répondre à ce commentaire"
+            >
+              <CornerDownRight className="w-4 h-4" />
+              <span className="text-sm font-medium">Répondre</span>
+            </button>
+          )}
+
           {isOwner && !isEditing && (
             <>
               <button
@@ -267,7 +302,43 @@ export function CommentCard({
             </Button>
           </div>
         )}
+        {/* Reply form */}
+        {showReplyForm && (
+          <div className="flex flex-col gap-2 pl-2 border-l-2 border-gray/20">
+            <textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value.slice(0, 500))}
+              placeholder="Votre réponse..."
+              rows={2}
+              className="w-full px-3 py-2 border border-gray/30 rounded-lg text-body text-dark resize-none focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+              maxLength={500}
+            />
+            <div className="flex gap-2">
+              <Button variant="primary" size="xs" onClick={handleSubmitReply} disabled={!replyText.trim()} isLoading={isSubmittingReply}>
+                Publier
+              </Button>
+              <Button variant="discrete" size="xs" onClick={() => { setShowReplyForm(false); setReplyText(""); }}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Replies — one level deep only */}
+      {!isReply && localReplies.length > 0 && (
+        <div className="flex flex-col gap-4 pl-10 border-l-2 border-gray/10 ml-10">
+          {localReplies.map((reply) => (
+            <CommentCard
+              key={reply.id}
+              comment={reply}
+              truncate={false}
+              isReply
+              onDeleted={() => setLocalReplies(prev => prev.filter(r => r.id !== reply.id))}
+            />
+          ))}
+        </div>
+      )}
     </article>
   );
 }

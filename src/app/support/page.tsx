@@ -24,7 +24,7 @@ export default function SupportPage() {
 
           {/* Description */}
           <p className="text-body text-gray mb-8 leading-relaxed max-w-[500px] mx-auto">
-            Le Book Club est un projet independant, porte par une seule personne.
+            The Book Club est un projet independant, porte par une seule personne.
             Les serveurs, la maintenance et le developpement me prennent beaucoup
             de temps et d&apos;argent. Si vous appreciez ce projet, vous pouvez
             m&apos;aider a le faire vivre.

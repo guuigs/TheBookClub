@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isStudyGuide } from '@/lib/study-guide'
 
 interface GoogleBooksVolume {
   id: string
@@ -62,92 +63,62 @@ interface SearchResult {
 }
 
 /**
+ * Fetch the full volume data by ID and return the best cover.
+ * Search results only return thumbnail/smallThumbnail — the full volume
+ * endpoint returns large/medium/extraLarge quality keys.
+ * Returns null if the volume is a study guide, commentary, or school textbook.
+ */
+async function fetchVolumeCover(volumeId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes/${volumeId}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    const volumeInfo = data.volumeInfo ?? {}
+
+    // Reject study guides, commentaries, school textbooks
+    if (isStudyGuide(volumeInfo).result) return null
+
+    return getBestCover(volumeInfo.imageLinks)
+  } catch {
+    return null
+  }
+}
+
+/**
  * Search Google Books for a book by title and author.
- * Tries multiple search strategies to maximize cover discovery.
- * Returns debug info for troubleshooting.
+ * For each candidate found in search results, fetches the full volume by ID
+ * to access high-quality image keys (large/medium/extraLarge).
+ * Prefers French editions; falls back to all languages.
  */
 async function searchGoogleBooks(title: string, authorName: string | null): Promise<SearchResult> {
   const debugInfo: SearchDebugInfo[] = []
 
-  // Clean title for better search results
   const cleanTitle = title
-    .replace(/\([^)]*\)/g, '') // Remove parentheses content
-    .replace(/\[[^\]]*\]/g, '') // Remove brackets content
-    .replace(/[,:;!?]/g, '') // Remove punctuation
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/[,:;!?]/g, '')
     .trim()
 
-  const searchStrategies: { name: string; query: string }[] = []
+  const queries: { name: string; query: string; langRestrict: boolean }[] = []
 
-  // Strategy 1: Simple title + author search (most flexible)
   if (authorName) {
-    searchStrategies.push({
-      name: `title+author: "${cleanTitle}" + "${authorName}"`,
-      query: `${cleanTitle} ${authorName}`
-    })
+    queries.push({ name: `title+author FR`, query: `${cleanTitle} ${authorName}`, langRestrict: true })
+    queries.push({ name: `title+author ALL`, query: `${cleanTitle} ${authorName}`, langRestrict: false })
   }
+  queries.push({ name: `title FR`, query: cleanTitle, langRestrict: true })
+  queries.push({ name: `title ALL`, query: cleanTitle, langRestrict: false })
 
-  // Strategy 2: Just the title
-  searchStrategies.push({
-    name: `title only: "${cleanTitle}"`,
-    query: cleanTitle
-  })
-
-  // Strategy 3: With intitle prefix (more precise)
-  searchStrategies.push({
-    name: `intitle: "${cleanTitle}"`,
-    query: `intitle:${cleanTitle}`
-  })
-
-  for (const { name, query } of searchStrategies) {
-    const encodedQuery = encodeURIComponent(query)
-
-    // Try French first
-    const urlFr = `https://www.googleapis.com/books/v1/volumes?q=${encodedQuery}&langRestrict=fr&maxResults=10`
-
-    try {
-      const resFr = await fetch(urlFr)
-      const debugEntry: SearchDebugInfo = {
-        strategy: `${name} (FR)`,
-        url: urlFr,
-        httpStatus: resFr.status,
-        itemsWithCovers: 0
-      }
-
-      if (resFr.ok) {
-        const dataFr: GoogleBooksResponse = await resFr.json()
-        debugEntry.totalItems = dataFr.totalItems ?? 0
-
-        if (dataFr.items && dataFr.items.length > 0) {
-          for (const item of dataFr.items) {
-            const coverUrl = getBestCover(item.volumeInfo?.imageLinks)
-            if (coverUrl) {
-              debugEntry.itemsWithCovers++
-              debugInfo.push(debugEntry)
-              return { coverUrl, debugInfo }
-            }
-          }
-        }
-      } else {
-        debugEntry.error = `HTTP ${resFr.status}`
-      }
-      debugInfo.push(debugEntry)
-    } catch (err) {
-      debugInfo.push({
-        strategy: `${name} (FR)`,
-        url: urlFr,
-        itemsWithCovers: 0,
-        error: err instanceof Error ? err.message : 'Unknown error'
-      })
-    }
-
-    // Try without language restriction
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodedQuery}&maxResults=10`
+  for (const { name, query, langRestrict } of queries) {
+    const encoded = encodeURIComponent(query)
+    const url = langRestrict
+      ? `https://www.googleapis.com/books/v1/volumes?q=${encoded}&langRestrict=fr&maxResults=5`
+      : `https://www.googleapis.com/books/v1/volumes?q=${encoded}&maxResults=5`
 
     try {
       const res = await fetch(url)
       const debugEntry: SearchDebugInfo = {
-        strategy: `${name} (ALL)`,
-        url: url,
+        strategy: name,
+        url,
         httpStatus: res.status,
         itemsWithCovers: 0
       }
@@ -158,7 +129,8 @@ async function searchGoogleBooks(title: string, authorName: string | null): Prom
 
         if (data.items && data.items.length > 0) {
           for (const item of data.items) {
-            const coverUrl = getBestCover(item.volumeInfo?.imageLinks)
+            // Search results only have thumbnail — fetch full volume for quality cover
+            const coverUrl = await fetchVolumeCover(item.id)
             if (coverUrl) {
               debugEntry.itemsWithCovers++
               debugInfo.push(debugEntry)
@@ -172,8 +144,8 @@ async function searchGoogleBooks(title: string, authorName: string | null): Prom
       debugInfo.push(debugEntry)
     } catch (err) {
       debugInfo.push({
-        strategy: `${name} (ALL)`,
-        url: url,
+        strategy: name,
+        url,
         itemsWithCovers: 0,
         error: err instanceof Error ? err.message : 'Unknown error'
       })
@@ -216,9 +188,9 @@ export async function POST() {
     }, { status: 500 })
   }
 
-  // DEBUG MODE: Set to false for production
   const DEBUG_MODE = false
-  const booksToProcess = DEBUG_MODE ? books.slice(0, 5) : books
+  const BATCH_SIZE = 50
+  const booksToProcess = books.slice(0, BATCH_SIZE)
 
   const results = {
     debugMode: DEBUG_MODE,
@@ -285,8 +257,8 @@ export async function POST() {
       })
     }
 
-    // Add small delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Small delay to avoid rate limiting
+    await new Promise(resolve => setTimeout(resolve, 100))
   }
 
   return NextResponse.json(results)

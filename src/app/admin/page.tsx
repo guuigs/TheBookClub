@@ -56,7 +56,24 @@ interface DeleteDuplicatesResponse {
   errors: string[];
 }
 
-type ActiveTask = "none" | "findCovers" | "updateCovers" | "previewDuplicates" | "deleteDuplicates";
+interface CleanLibraryPreview {
+  totalBooks: number;
+  studyGuideBooks: { id: string; title: string; authorName: string | null; reason: string }[];
+  invalidCovers: { id: string; title: string; volumeTitle: string; reason: string }[];
+  checkedCovers: number;
+  nextOffset: number;
+  remainingCovers: number;
+}
+
+interface CleanLibraryResult {
+  deleted?: number;
+  fixed?: number;
+  failed?: number;
+  checked?: number;
+  remaining?: number;
+}
+
+type ActiveTask = "none" | "findCovers" | "updateCovers" | "previewDuplicates" | "deleteDuplicates" | "analyzeLibrary" | "cleanBooks" | "cleanCovers";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -65,6 +82,8 @@ export default function AdminPage() {
   const [coversResult, setCoversResult] = useState<FindCoversResponse | null>(null);
   const [duplicatesPreview, setDuplicatesPreview] = useState<DuplicatesResponse | null>(null);
   const [duplicatesResult, setDuplicatesResult] = useState<DeleteDuplicatesResponse | null>(null);
+  const [cleanPreview, setCleanPreview] = useState<CleanLibraryPreview | null>(null);
+  const [cleanResult, setCleanResult] = useState<CleanLibraryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -85,6 +104,8 @@ export default function AdminPage() {
     setCoversResult(null);
     setDuplicatesPreview(null);
     setDuplicatesResult(null);
+    setCleanPreview(null);
+    setCleanResult(null);
   };
 
   const handleFindCovers = async () => {
@@ -154,6 +175,66 @@ export default function AdminPage() {
     }
   };
 
+  const handleAnalyzeLibrary = async (offset = 0) => {
+    if (offset === 0) resetState();
+    setActiveTask("analyzeLibrary");
+    try {
+      const res = await fetch(`/api/admin/clean-library?offset=${offset}`);
+      const data: CleanLibraryPreview = await res.json();
+      if (!res.ok) throw new Error((data as unknown as { details?: string; error?: string }).details || (data as unknown as { error?: string }).error || "Erreur");
+      setCleanPreview(prev => {
+        if (!prev || offset === 0) return data;
+        // Merge: accumulate new findings, update pagination
+        return {
+          ...data,
+          studyGuideBooks: prev.studyGuideBooks,
+          invalidCovers: [
+            ...prev.invalidCovers,
+            ...data.invalidCovers.filter(n => !prev.invalidCovers.find(p => p.id === n.id))
+          ],
+        };
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inconnue");
+    } finally {
+      setActiveTask("none");
+    }
+  };
+
+  const handleCleanBooks = async () => {
+    if (!confirm("Supprimer les livres guides d'étude / commentaires ? Irréversible.")) return;
+    setActiveTask("cleanBooks");
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/clean-library?action=books", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error || "Erreur");
+      setCleanResult(data);
+      setCleanPreview(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inconnue");
+    } finally {
+      setActiveTask("none");
+    }
+  };
+
+  const handleCleanCovers = async () => {
+    if (!confirm("Remettre à null les covers provenant de guides d'étude ? Irréversible.")) return;
+    setActiveTask("cleanCovers");
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/clean-library?action=covers", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error || "Erreur");
+      setCleanResult(data);
+      setCleanPreview(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inconnue");
+    } finally {
+      setActiveTask("none");
+    }
+  };
+
   if (isAuthorized === null || !isAuthorized) return null;
 
   const isLoading = activeTask !== "none";
@@ -194,6 +275,49 @@ export default function AdminPage() {
                 {activeTask === "updateCovers" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Améliorer existantes
               </Button>
+            </div>
+          </div>
+
+          {/* Clean Library */}
+          <div className="p-6 bg-gray/5 rounded-xl">
+            <h2 className="text-t4 font-semibold text-dark mb-2">Nettoyage bibliothèque</h2>
+            <p className="text-small text-gray mb-4">
+              Détecter et supprimer les guides d&apos;étude, commentaires et manuels scolaires.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleAnalyzeLibrary(0)}
+                disabled={isLoading}
+              >
+                {activeTask === "analyzeLibrary" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Analyser
+              </Button>
+              {cleanPreview && cleanPreview.studyGuideBooks.length > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCleanBooks}
+                  disabled={isLoading}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {activeTask === "cleanBooks" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Supprimer livres ({cleanPreview.studyGuideBooks.length})
+                </Button>
+              )}
+              {cleanPreview && cleanPreview.invalidCovers.length > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCleanCovers}
+                  disabled={isLoading}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  {activeTask === "cleanCovers" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Corriger covers ({cleanPreview.invalidCovers.length})
+                </Button>
+              )}
             </div>
           </div>
 
@@ -297,6 +421,89 @@ export default function AdminPage() {
                 </p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Clean Library Preview */}
+        {cleanPreview && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-t4 font-semibold text-dark">
+                Analyse bibliothèque
+                <span className="text-small text-gray font-normal ml-2">
+                  ({cleanPreview.checkedCovers} covers vérifiées
+                  {cleanPreview.remainingCovers > 0 && `, ${cleanPreview.remainingCovers} restantes`})
+                </span>
+              </h2>
+              {cleanPreview.remainingCovers > 0 && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleAnalyzeLibrary(cleanPreview!.nextOffset)}
+                  disabled={isLoading}
+                >
+                  {activeTask === "analyzeLibrary" && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  50 suivantes
+                </Button>
+              )}
+            </div>
+
+            {cleanPreview.studyGuideBooks.length === 0 && cleanPreview.invalidCovers.length === 0 ? (
+              <p className="text-body text-gray">Aucun problème détecté.</p>
+            ) : (
+              <div className="space-y-4">
+                {cleanPreview.studyGuideBooks.length > 0 && (
+                  <div>
+                    <p className="text-body font-semibold text-red-700 mb-2">
+                      {cleanPreview.studyGuideBooks.length} livre(s) non conformes
+                    </p>
+                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                      {cleanPreview.studyGuideBooks.map((b) => (
+                        <div key={b.id} className="p-2 bg-red-50 rounded flex items-center justify-between">
+                          <p className="text-body text-dark truncate flex-1">{b.title}</p>
+                          <span className="text-small text-red-600 ml-4 shrink-0">{b.reason}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {cleanPreview.invalidCovers.length > 0 && (
+                  <div>
+                    <p className="text-body font-semibold text-orange-700 mb-2">
+                      {cleanPreview.invalidCovers.length} cover(s) invalides
+                    </p>
+                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                      {cleanPreview.invalidCovers.map((b) => (
+                        <div key={b.id} className="p-2 bg-orange-50 rounded flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-body text-dark truncate">{b.title}</p>
+                            <p className="text-small text-gray">Cover : {b.volumeTitle}</p>
+                          </div>
+                          <span className="text-small text-orange-600 ml-4 shrink-0">{b.reason}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Clean Library Result */}
+        {cleanResult && (
+          <div className="p-4 mb-8 bg-green-50 rounded-lg">
+            {cleanResult.deleted !== undefined && (
+              <p className="text-body font-medium text-dark">{cleanResult.deleted} livre(s) supprimé(s)</p>
+            )}
+            {cleanResult.fixed !== undefined && (
+              <p className="text-body font-medium text-dark">
+                {cleanResult.fixed} cover(s) remises à zéro
+                {cleanResult.remaining && cleanResult.remaining > 0
+                  ? ` — ${cleanResult.remaining} restantes à traiter`
+                  : ''}
+              </p>
+            )}
           </div>
         )}
 

@@ -190,13 +190,16 @@ export async function POST(request: NextRequest) {
     if (existingAuthor) {
       const { data: existingBook } = await supabase
         .from('books')
-        .select('id')
+        .select('id, cover_url')
         .ilike('title', title)
         .eq('author_id', existingAuthor.id)
         .maybeSingle()
 
       if (existingBook) {
-        return NextResponse.json({ exists: true, book_id: existingBook.id })
+        if (coverUrl) {
+          await supabase.from('books').update({ cover_url: coverUrl }).eq('id', existingBook.id)
+        }
+        return NextResponse.json({ success: true, book_id: existingBook.id })
       }
     }
   } else {
@@ -208,7 +211,10 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (existingBook) {
-      return NextResponse.json({ exists: true, book_id: existingBook.id })
+      if (coverUrl) {
+        await supabase.from('books').update({ cover_url: coverUrl }).eq('id', existingBook.id)
+      }
+      return NextResponse.json({ success: true, book_id: existingBook.id })
     }
   }
 

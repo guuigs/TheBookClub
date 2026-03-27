@@ -162,11 +162,8 @@ export function Header() {
                 )}
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="text-body font-medium tracking-tight text-dark hover:text-primary transition-colors"
-              >
-                connexion
+              <Link href="/login" aria-label="Connexion">
+                <User className="w-6 h-6 text-gray/50 hover:text-gray transition-colors" />
               </Link>
             )}
           </div>
@@ -243,10 +240,12 @@ export function Header() {
               ) : (
                 <Link
                   href="/login"
-                  className="text-body font-medium tracking-tight text-dark py-2"
+                  className="flex items-center gap-2 py-2"
                   onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Connexion"
                 >
-                  connexion
+                  <User className="w-5 h-5 text-gray/50" />
+                  <span className="text-body font-medium text-gray/50">connexion</span>
                 </Link>
               )}
             </nav>

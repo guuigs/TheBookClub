@@ -136,7 +136,7 @@ export function InteractiveStarRating({
             <div
               key={i}
               onMouseMove={(e) => handleMouseMove(e, i)}
-              onClick={(e) => isEditing && handleClick(e, i)}
+              onClick={(e) => (disabled || isEditing) && handleClick(e, i)}
               style={{ width: starSize, height: starSize, position: "relative" }}
             >
               {/* Background star (empty) */}

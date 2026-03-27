@@ -32,7 +32,30 @@ function ContactForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Message envoyé ! Nous vous répondrons dans les plus brefs délais.");
+
+    const bodyLines = isModification
+      ? [
+          `De : ${name} (${email})`,
+          ``,
+          `Titre : ${bookTitle}`,
+          `Auteur : ${bookAuthor}`,
+          `Date de parution : ${bookDate}`,
+          `Genre : ${bookGenre}`,
+          `Description : ${bookDescription}`,
+          `Lien couverture : ${bookCoverUrl}`,
+          ``,
+          `Corrections / commentaires :`,
+          bookCorrections,
+        ]
+      : [
+          `De : ${name} (${email})`,
+          ``,
+          message,
+        ];
+
+    const mailtoUrl = `mailto:guilhemtr@proton.me?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join('\n'))}`;
+    window.location.href = mailtoUrl;
+
     setName("");
     setEmail("");
     setSubject("");

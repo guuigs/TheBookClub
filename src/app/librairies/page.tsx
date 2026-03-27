@@ -13,7 +13,7 @@ export default function LibrairiesPage() {
 
           <div className="flex flex-col gap-6 max-w-[600px]">
             <p className="text-body text-gray leading-relaxed">
-              Le Book Club est en train de construire un réseau de librairies indépendantes
+              The Book Club est en train de construire un réseau de librairies indépendantes
               partenaires partout en France.
             </p>
 

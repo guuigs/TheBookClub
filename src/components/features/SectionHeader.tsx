@@ -7,6 +7,7 @@ export interface SectionHeaderProps {
   seeMoreHref?: string;
   seeMoreLabel?: string;
   className?: string;
+  titleClassName?: string;
 }
 
 export function SectionHeader({
@@ -14,10 +15,11 @@ export function SectionHeader({
   seeMoreHref,
   seeMoreLabel = "voir plus",
   className = "",
+  titleClassName = "text-t3",
 }: SectionHeaderProps) {
   return (
     <div className={`flex items-end justify-between w-full ${className}`}>
-      <h2 className="text-t3 font-semibold text-dark tracking-tight">
+      <h2 className={`font-semibold text-dark tracking-tight ${titleClassName}`}>
         {title}
       </h2>
       {seeMoreHref && (
